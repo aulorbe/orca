@@ -23,6 +23,10 @@ EXECUTABLE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$CONTE
 ELECTRON="$CONTENTS/MacOS/$EXECUTABLE_NAME"
 BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$CONTENTS/Info.plist")
 if [[ "$BUNDLE_ID" == "com.aulorbe.orca.custom" ]]; then
+	# A command typed in a stock Orca terminal must not inherit its live runtime profile.
+	if [[ "${ORCA_CUSTOM_BUILD-}" != "1" ]]; then
+		unset ORCA_USER_DATA_PATH
+	fi
 	export ORCA_CUSTOM_BUILD=1
 else
 	unset ORCA_CUSTOM_BUILD

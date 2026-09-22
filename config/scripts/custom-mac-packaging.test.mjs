@@ -82,22 +82,29 @@ describe('custom macOS packaging', () => {
           )
           writeFileSync(
             join(contents, 'MacOS', appName),
-            '#!/bin/sh\nprintf "%s\\n" "${ORCA_CUSTOM_BUILD-stock}" "$@"\n',
+            '#!/bin/sh\nprintf "%s\\n" "${ORCA_CUSTOM_BUILD-stock}" "${ORCA_USER_DATA_PATH-unset}" "$@"\n',
             { mode: 0o755 }
           )
           const launcher = join(bin, 'orca')
           copyFileSync(new URL('../../resources/darwin/bin/orca', import.meta.url), launcher)
-          const result = spawnSync('bash', [launcher, 'status', '--json'], {
-            encoding: 'utf8',
-            env: { ...process.env, ORCA_CUSTOM_BUILD: '1' }
-          })
-          expect(result.status, result.stderr).toBe(0)
-          expect(result.stdout.trim().split('\n')).toEqual([
-            custom ? '1' : 'stock',
-            join(contents, 'Resources', 'app.asar.unpacked', 'out', 'cli', 'index.js'),
-            'status',
-            '--json'
-          ])
+          for (const customTerminal of [false, true]) {
+            const result = spawnSync('bash', [launcher, 'status', '--json'], {
+              encoding: 'utf8',
+              env: {
+                ...process.env,
+                ORCA_CUSTOM_BUILD: customTerminal ? '1' : undefined,
+                ORCA_USER_DATA_PATH: '/caller/profile'
+              }
+            })
+            expect(result.status, result.stderr).toBe(0)
+            expect(result.stdout.trim().split('\n')).toEqual([
+              custom ? '1' : 'stock',
+              custom && !customTerminal ? 'unset' : '/caller/profile',
+              join(contents, 'Resources', 'app.asar.unpacked', 'out', 'cli', 'index.js'),
+              'status',
+              '--json'
+            ])
+          }
         }
       } finally {
         rmSync(root, { recursive: true, force: true })
