@@ -19,7 +19,14 @@ if [ -z "$APP_PATH" ]; then
 fi
 
 CONTENTS="$APP_PATH/Contents"
-ELECTRON="$CONTENTS/MacOS/Orca"
+EXECUTABLE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$CONTENTS/Info.plist")
+ELECTRON="$CONTENTS/MacOS/$EXECUTABLE_NAME"
+BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$CONTENTS/Info.plist")
+if [[ "$BUNDLE_ID" == "com.aulorbe.orca.custom" ]]; then
+	export ORCA_CUSTOM_BUILD=1
+else
+	unset ORCA_CUSTOM_BUILD
+fi
 # Why: Orca packages the CLI entrypoint outside app.asar so the public shell
 # command can execute it directly with ELECTRON_RUN_AS_NODE, mirroring VS Code's
 # launcher model instead of requiring a separate npm-distributed binary.

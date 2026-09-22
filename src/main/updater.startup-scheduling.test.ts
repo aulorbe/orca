@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { loadUpdaterModule, warmUpdaterModule } from './updater-test-module-loader'
 
 const {
@@ -34,19 +34,44 @@ describe('updater', () => {
     vi.useFakeTimers()
   })
 
-  it('does not load or configure electron-updater during dev setup', async () => {
-    isMock.dev = true
-    const mainWindow = { webContents: { send: vi.fn() } }
+  afterEach(() => vi.unstubAllEnvs())
 
-    const { setupAutoUpdater } = await loadUpdaterModule()
+  it.each(['dev', 'custom'])(
+    'does not load or configure electron-updater during %s setup',
+    async (mode) => {
+      isMock.dev = mode === 'dev'
+      vi.stubEnv('ORCA_CUSTOM_BUILD', mode === 'custom' ? '1' : undefined)
+      const mainWindow = { webContents: { send: vi.fn() } }
 
-    setupAutoUpdater(mainWindow as never)
+      const { setupAutoUpdater } = await loadUpdaterModule()
 
-    // Why: E2E dev-mode launches use a default app version that makes electron-updater throw during module load.
-    expect(autoUpdaterMock.updateConfigPath).toBeUndefined()
+      setupAutoUpdater(mainWindow as never)
+
+      // Why: E2E dev-mode launches use a default app version that makes electron-updater throw during module load.
+      expect(autoUpdaterMock.updateConfigPath).toBeUndefined()
+      expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled()
+      expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled()
+      expect(powerMonitorOnMock).not.toHaveBeenCalled()
+    }
+  )
+
+  it('blocks background checks, manual channel switches, downloads and installs in custom builds', async () => {
+    vi.stubEnv('ORCA_CUSTOM_BUILD', '1')
+    const updater = await loadUpdaterModule()
+    updater.checkForUpdates()
+    updater.checkForUpdatesFromMenu({ channel: 'stable', targetTag: 'v1.0.51' })
+    expect(updater.getUpdateStatus()).toMatchObject({
+      state: 'error',
+      message: 'Orca Custom uses manual updates. Rebuild and install from your fork.',
+      retryable: false
+    })
+    expect(await updater.listAvailableReleaseBuilds('stable')).toEqual([])
+    updater.downloadUpdate()
+    updater.quitAndInstall()
     expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled()
     expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled()
-    expect(powerMonitorOnMock).not.toHaveBeenCalled()
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled()
+    expect(autoUpdaterMock.quitAndInstall).not.toHaveBeenCalled()
   })
 
   it('runs a startup check immediately when the last background check is stale', async () => {

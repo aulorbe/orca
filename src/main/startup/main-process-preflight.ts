@@ -1,4 +1,5 @@
 import { app, ipcMain, powerMonitor, session } from 'electron'
+import { configureCustomBuildEnvironment } from '../../shared/custom-build'
 import { is } from '@electron-toolkit/utils'
 import os from 'node:os'
 import { join } from 'node:path'
@@ -122,7 +123,8 @@ export function runMainProcessPreflight(options: MainProcessPreflightOptions): b
   if (state.isServeMode) {
     reserveServeStdoutForReadiness()
   }
-  state.devInstanceIdentity = getDevInstanceIdentity(is.dev)
+  configureCustomBuildEnvironment(app.getName())
+  state.devInstanceIdentity = getDevInstanceIdentity(is.dev, process.env, app.getName())
   state.devAgentHookEndpointNamespace = state.devInstanceIdentity.isDev
     ? state.devInstanceIdentity.appUserModelId
     : undefined

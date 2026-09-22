@@ -4,6 +4,7 @@ import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { getVersionManagerBinPaths } from '../codex-cli/command'
 import { getMainE2EConfig } from '../e2e-config'
+import { CUSTOM_APP_IDENTITY, isCustomBuild } from '../../shared/custom-build'
 import { DISABLED_CHROMIUM_FEATURES } from './disabled-chromium-features'
 import { readHttp1CompatibilityMarker } from './http1-compatibility-marker'
 
@@ -209,6 +210,9 @@ export function configureDevUserDataPath(isDev: boolean): void {
   }
 
   if (!isDev) {
+    if (isCustomBuild()) {
+      app.setPath('userData', join(app.getPath('appData'), CUSTOM_APP_IDENTITY.name))
+    }
     return
   }
   const overrideUserDataPath = process.env.ORCA_DEV_USER_DATA_PATH
@@ -236,8 +240,8 @@ export function configureOrcaUserDataPathEnv(): void {
 
 export function shouldInstallManagedHooks(isDev: boolean): boolean {
   void isDev
-  // Why: managed hooks now target Orca-owned Codex homes, not ~/.codex, so keep install on for all agents until each gets its own seam.
-  return true
+  // Custom builds reuse installed hooks without rewriting the stock app's user-global scripts at startup.
+  return !isCustomBuild()
 }
 
 export function installDevParentDisconnectQuit(isDev: boolean): void {

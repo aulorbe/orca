@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import type { AppIdentity } from '../../shared/app-identity'
+import { CUSTOM_APP_IDENTITY } from '../../shared/custom-build'
 
 const BASE_APP_NAME = 'Orca'
 const BASE_APP_USER_MODEL_ID = 'com.stablyai.orca'
@@ -63,19 +64,22 @@ function createDevAppUserModelId(identityKey: string | null): string {
 
 export function getDevInstanceIdentity(
   isDev: boolean,
-  env: NodeJS.ProcessEnv = process.env
+  env: NodeJS.ProcessEnv = process.env,
+  packagedAppName = BASE_APP_NAME
 ): DevInstanceIdentity {
   if (!isDev) {
+    const custom = packagedAppName === CUSTOM_APP_IDENTITY.name
+    const name = custom ? CUSTOM_APP_IDENTITY.name : BASE_APP_NAME
     return {
-      name: BASE_APP_NAME,
-      appName: BASE_APP_NAME,
+      name,
+      appName: name,
       isDev: false,
       devLabel: null,
       devBranch: null,
       devWorktreeName: null,
       devRepoRoot: null,
       dockBadgeLabel: null,
-      appUserModelId: BASE_APP_USER_MODEL_ID
+      appUserModelId: custom ? CUSTOM_APP_IDENTITY.appId : BASE_APP_USER_MODEL_ID
     }
   }
 

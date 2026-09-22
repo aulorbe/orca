@@ -28,19 +28,31 @@ export function getLocalBuildIdentity() {
   }
 }
 
+export function getMacPackagingArgs(
+  custom = process.env.ORCA_BUILD_FLAVOR === 'custom',
+  arch = process.arch
+) {
+  return [
+    'exec',
+    'electron-builder',
+    '--config',
+    'config/electron-builder.config.cjs',
+    '--mac',
+    ...(custom ? [`--${arch}`] : []),
+    '--publish',
+    'never'
+  ]
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename)) {
   const identity = getLocalBuildIdentity()
   console.log(`[build:mac] local update version ${identity.version}`)
-  execFileSync(
-    process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm',
-    ['exec', 'electron-builder', '--config', 'config/electron-builder.config.cjs', '--mac'],
-    {
-      env: {
-        ...process.env,
-        ORCA_BUILD_COMMIT: identity.commit,
-        ORCA_LOCAL_BUILD_VERSION: identity.version
-      },
-      stdio: 'inherit'
-    }
-  )
+  execFileSync(process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm', getMacPackagingArgs(), {
+    env: {
+      ...process.env,
+      ORCA_BUILD_COMMIT: identity.commit,
+      ORCA_LOCAL_BUILD_VERSION: identity.version
+    },
+    stdio: 'inherit'
+  })
 }

@@ -1,5 +1,6 @@
 import { app } from 'electron'
 import { is } from '@electron-toolkit/utils'
+import { isCustomBuild } from '../../shared/custom-build'
 import { withUpdaterSpan } from '../observability/instrumentation'
 import {
   AUTO_UPDATE_CHECK_INTERVAL_MS,
@@ -57,7 +58,7 @@ export abstract class UpdaterScheduling extends UpdaterCheckFailure {
     if (this.backgroundCheckLaunchPending || this.currentStatus.state === 'checking') {
       return false
     }
-    if (!app.isPackaged || is.dev) {
+    if (!app.isPackaged || is.dev || isCustomBuild()) {
       this.sendStatus({ state: 'not-available' })
       return false
     }

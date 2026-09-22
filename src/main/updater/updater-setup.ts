@@ -1,6 +1,7 @@
 import { app, powerMonitor } from 'electron'
 import type { BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
+import { isCustomBuild } from '../../shared/custom-build'
 import type { ReleaseBuild, ReleaseChannel } from '../../shared/release-channel'
 import type { ReleaseBuildListOptions } from '../updater-release-build-cache'
 import type {
@@ -45,11 +46,15 @@ export class UpdaterSetup extends UpdaterDownloadInstall {
   }
 
   downloadUpdate(): void {
-    super.downloadUpdate()
+    if (!isCustomBuild()) {
+      super.downloadUpdate()
+    }
   }
 
   quitAndInstall(): void {
-    super.quitAndInstall()
+    if (!isCustomBuild()) {
+      super.quitAndInstall()
+    }
   }
 
   isQuittingForUpdate(): boolean {
@@ -99,7 +104,7 @@ export class UpdaterSetup extends UpdaterDownloadInstall {
     channel: ReleaseChannel,
     options?: ReleaseBuildListOptions
   ): Promise<ReleaseBuild[]> {
-    return super.listAvailableReleaseBuilds(channel, options)
+    return isCustomBuild() ? [] : super.listAvailableReleaseBuilds(channel, options)
   }
 
   dismissNudge(): void {
@@ -136,7 +141,7 @@ export class UpdaterSetup extends UpdaterDownloadInstall {
     if (!app.isPackaged && !is.dev) {
       return
     }
-    if (is.dev) {
+    if (is.dev || isCustomBuild()) {
       return
     }
 

@@ -68,7 +68,12 @@ const devChannelRepo = isHourlyChannel
     : isAdhocChannel
       ? 'orca-adhoc'
       : null
-const appId = 'com.stablyai.orca'
+const customIdentity = require('../src/shared/custom-app-identity.json')
+const isCustomBuild = process.env.ORCA_BUILD_FLAVOR === 'custom'
+if (isCustomBuild && isMacRelease) {
+  throw new Error('Orca Custom uses local packaging, not the upstream release-signing path.')
+}
+const appId = isCustomBuild ? customIdentity.appId : 'com.stablyai.orca'
 const featureWallResources = {
   from: 'resources/onboarding/feature-wall',
   to: 'onboarding/feature-wall'
@@ -165,14 +170,21 @@ const windowsRuntimeResources = existsSync(
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
   appId,
-  productName: 'Orca',
-  protocols: [{ name: 'Orca', schemes: ['orca'] }],
+  productName: isCustomBuild ? customIdentity.name : 'Orca',
+  protocols: isCustomBuild ? [] : [{ name: 'Orca', schemes: ['orca'] }],
   toolsets: { appimage: '1.0.3' },
-  ...(devChannelBuildVersion
-    ? { extraMetadata: { version: devChannelBuildVersion } }
-    : localBuildVersion
-      ? { extraMetadata: { version: localBuildVersion } }
-      : {}),
+  ...(devChannelBuildVersion || localBuildVersion || isCustomBuild
+    ? {
+        extraMetadata: {
+          ...(devChannelBuildVersion || localBuildVersion
+            ? { version: devChannelBuildVersion || localBuildVersion }
+            : {}),
+          ...(isCustomBuild
+            ? { name: customIdentity.cliName, productName: customIdentity.name }
+            : {})
+        }
+      }
+    : {}),
   directories: {
     buildResources: 'resources/build'
   },
@@ -336,7 +348,7 @@ module.exports = {
           // Source archives can still produce a signed build with an explicit version.
         }
       }
-      writeMacBuildCompatibility(resourcesDir, { version, commit, architecture })
+      writeMacBuildCompatibility(resourcesDir, { version, commit, architecture, appId })
     }
     stampPackagedCliVersion(resourcesDir, context.packager.appInfo.version)
     prunePackagedRuntimeNodeModules(resourcesDir, context.electronPlatformName, context.arch)
@@ -565,7 +577,7 @@ module.exports = {
   // silently downgrading to ad-hoc artifacts that look shippable in CI logs.
   forceCodeSigning: isMacRelease,
   dmg: {
-    artifactName: 'orca-macos-${arch}.${ext}'
+    artifactName: isCustomBuild ? 'orca-custom-macos-${arch}.${ext}' : 'orca-macos-${arch}.${ext}'
   },
   linux: {
     // Why mimeTypes and not fileAssociations: shared-mime-info already maps *.md/*.markdown to
@@ -661,16 +673,18 @@ module.exports = {
   // on Intel Macs. The beforeBuild hook performs Orca's targeted rebuild and
   // returns false so electron-builder does not rebuild optional cpu-features.
   npmRebuild: true,
-  publish: {
-    provider: 'github',
-    owner: 'stablyai',
-    repo: devChannelRepo ?? 'orca',
-    // Why draft on the main repo: `--publish always` otherwise creates a
-    // public GitHub release as soon as the first platform uploads, and
-    // /releases/latest serves a missing Windows exe. release-cut undrafts
-    // only after every required asset exists.
-    releaseType: devChannelRepo ? 'prerelease' : 'draft'
-  }
+  publish: isCustomBuild
+    ? null
+    : {
+        provider: 'github',
+        owner: 'stablyai',
+        repo: devChannelRepo ?? 'orca',
+        // Why draft on the main repo: `--publish always` otherwise creates a
+        // public GitHub release as soon as the first platform uploads, and
+        // /releases/latest serves a missing Windows exe. release-cut undrafts
+        // only after every required asset exists.
+        releaseType: devChannelRepo ? 'prerelease' : 'draft'
+      }
 }
 
 // Stamp the effective channel version where node-mode CLI code can read it.
