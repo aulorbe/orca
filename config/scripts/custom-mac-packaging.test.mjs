@@ -42,6 +42,10 @@ describe('custom macOS packaging', () => {
     expect(config.publish).toBeNull()
     expect(config.dmg.artifactName).toBe('orca-custom-macos-${arch}.${ext}')
     expect(config.forceCodeSigning).toBe(false)
+    expect(config.mac.target).toEqual([
+      { target: 'dmg', arch: [process.arch] },
+      { target: 'zip', arch: [process.arch] }
+    ])
     expect(
       createMacBuildCompatibility({
         version: '1.0.0',

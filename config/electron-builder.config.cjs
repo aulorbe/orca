@@ -565,11 +565,11 @@ module.exports = {
     target: [
       {
         target: 'dmg',
-        arch: ['x64', 'arm64']
+        arch: isCustomBuild ? [process.arch] : ['x64', 'arm64']
       },
       {
         target: 'zip',
-        arch: ['x64', 'arm64']
+        arch: isCustomBuild ? [process.arch] : ['x64', 'arm64']
       }
     ]
   },
