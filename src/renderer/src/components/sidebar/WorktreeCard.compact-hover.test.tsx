@@ -396,7 +396,8 @@ describe('WorktreeCard compact hover details', () => {
       />
     )
 
-    expect(markup).not.toContain('data-hover-open-delay="100"')
+    expect(markup).toContain('data-hover-open-delay="100"')
+    expect(markup).toContain('Add tags')
     expect(markup).toContain('feature/local-branch')
     expect(markup).toContain('Human title')
   })

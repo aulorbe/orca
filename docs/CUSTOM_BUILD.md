@@ -43,8 +43,12 @@ The custom app may request its own permissions; stock Orca's grants do not neces
 
 ## Card tags
 
-Click a card's tag icon (or its colored dots) to add a tag name and color. Check an existing tag
-to reuse it; uncheck it to remove it from that card. Hover the dots to see their names.
+Hover a card and click **Add tags** / **Edit tags** in its details. Each card can have multiple tags,
+each with a different hex color. Check existing tags to reuse them; uncheck them to remove them
+from just that card. The title shows only colored dots for tags already applied—no empty tag icon.
+
+Use the **×** beside a tag in the editor to delete it from all cards. A confirmation dialog
+appears before deletion. Different tags cannot use the same hex color.
 
 Use **Workspace options → Tags** to filter cards. Multiple selections match any selected tag;
 **Clear tag filter** shows all cards again. Tags and the selected filter are saved locally in

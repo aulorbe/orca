@@ -145,51 +145,46 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
     ? hasHoverDetails
       ? (title: React.ReactElement): React.ReactElement => title
       : undefined
-    : compactCards && (showBranchIdentityHover || hasDetails || hasPorts)
-      ? (title: React.ReactElement): React.ReactElement => (
-          <WorktreeCardDetailsHover
-            issue={metaIssue}
-            linearIssue={metaLinearIssue}
-            jiraIssue={metaJiraIssue}
-            review={metaReview}
-            comment={metaComment}
-            automationProvenance={metaAutomationProvenance}
-            cliProvenance={metaCliProvenance}
-            branchName={showBranchIdentityHover ? branch : undefined}
-            workspaceTitle={worktree.displayName}
-            identityOrder="branch-first"
-            detailsAfter={hasPorts ? <WorktreeCardPortsDetails ports={workspacePorts} /> : null}
-            openDelay={100}
-            // Why: compact mode also renders the plug/badge hover root; sharing one open-state made hovering the
-            // plug force-open the wider title card and race it closed (#9304), so let this title hover own its state.
-            onEditIssue={affiliateListMode ? undefined : handleEditIssue}
-            onEditComment={affiliateListMode ? undefined : handleEditComment}
-            onOpenGitHubIssueInOrca={
-              metaIssue && 'url' in metaIssue && metaIssue.url
-                ? handleOpenGitHubIssueInOrca
-                : undefined
-            }
-            onOpenIssueInBrowser={
-              metaIssue && 'url' in metaIssue && metaIssue.url
-                ? handleOpenIssueInBrowser
-                : undefined
-            }
-            onOpenLinearIssueInOrca={linearIssue?.url ? handleOpenLinearIssueInOrca : undefined}
-            onOpenReviewInOrca={
-              metaReview?.url && metaReview.provider === 'github'
-                ? handleOpenReviewInOrca
-                : undefined
-            }
-            onOpenReviewInBrowser={metaReview?.url ? handleOpenReviewInBrowser : undefined}
-            onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
-            onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}
-            // Why: compact mode hides the metadata badge row, so title hover carries the review affordance.
-            onUnlinkReview={!affiliateListMode && canUnlinkReview ? handleUnlinkReview : undefined}
-          >
-            {title}
-          </WorktreeCardDetailsHover>
-        )
-      : undefined
+    : (title: React.ReactElement): React.ReactElement => (
+        <WorktreeCardDetailsHover
+          worktree={worktree}
+          issue={metaIssue}
+          linearIssue={metaLinearIssue}
+          jiraIssue={metaJiraIssue}
+          review={metaReview}
+          comment={metaComment}
+          automationProvenance={metaAutomationProvenance}
+          cliProvenance={metaCliProvenance}
+          branchName={showBranchIdentityHover ? branch : undefined}
+          workspaceTitle={worktree.displayName}
+          identityOrder="branch-first"
+          detailsAfter={hasPorts ? <WorktreeCardPortsDetails ports={workspacePorts} /> : null}
+          openDelay={100}
+          // Why: compact mode also renders the plug/badge hover root; sharing one open-state made hovering the
+          // plug force-open the wider title card and race it closed (#9304), so let this title hover own its state.
+          onEditIssue={affiliateListMode ? undefined : handleEditIssue}
+          onEditComment={affiliateListMode ? undefined : handleEditComment}
+          onOpenGitHubIssueInOrca={
+            metaIssue && 'url' in metaIssue && metaIssue.url
+              ? handleOpenGitHubIssueInOrca
+              : undefined
+          }
+          onOpenIssueInBrowser={
+            metaIssue && 'url' in metaIssue && metaIssue.url ? handleOpenIssueInBrowser : undefined
+          }
+          onOpenLinearIssueInOrca={linearIssue?.url ? handleOpenLinearIssueInOrca : undefined}
+          onOpenReviewInOrca={
+            metaReview?.url && metaReview.provider === 'github' ? handleOpenReviewInOrca : undefined
+          }
+          onOpenReviewInBrowser={metaReview?.url ? handleOpenReviewInBrowser : undefined}
+          onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
+          onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}
+          // Why: compact mode hides the metadata badge row, so title hover carries the review affordance.
+          onUnlinkReview={!affiliateListMode && canUnlinkReview ? handleUnlinkReview : undefined}
+        >
+          {title}
+        </WorktreeCardDetailsHover>
+      )
   // Why: sidebar rows need a small surface inset while content stays aligned with the pre-inset layout.
   const applyNewCardStyleStatusLaneOffset = newCardStyle && showCombinedStatusSlot
   const cardPaddingLeft = flushSurface
@@ -223,6 +218,7 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
   const detailsAndPorts =
     detailsAndPortsContent && !newCardStyle ? (
       <WorktreeCardDetailsHover
+        worktree={worktree}
         issue={metaIssue}
         linearIssue={metaLinearIssue}
         jiraIssue={metaJiraIssue}

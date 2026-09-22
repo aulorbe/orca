@@ -4,6 +4,7 @@ import type {
   CliWorkspaceProvenance
 } from '../../../../shared/worktree/types'
 import type { WorktreeCardPrDisplay } from './worktree-card-pr-display'
+import type { TaggedWorkspace } from '../../../../shared/workspace-tags'
 import type { WorktreeCardDetailsHoverControl } from './worktree-card-details-hover-state'
 
 export type WorktreeCardIssueDisplay =
@@ -50,6 +51,7 @@ export type WorktreeCardDetailsHoverProps = WorktreeCardMetaBadgesProps & {
   identityOrder?: 'workspace-first' | 'branch-first'
   workspaceTitleRenameDisabled?: boolean
   detailsAfter?: React.ReactNode
+  worktree?: TaggedWorkspace
   openDelay?: number
   closeDelay?: number
   onRenameWorkspaceTitle?: (displayName: string) => Promise<void> | void

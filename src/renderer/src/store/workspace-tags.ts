@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import {
   assignWorkspaceTag,
+  deleteWorkspaceTag,
   EMPTY_WORKSPACE_TAGS,
   normalizeWorkspaceTags,
   saveWorkspaceTag,
@@ -16,6 +17,7 @@ type WorkspaceTagsState = {
   assignTag: (workspace: TaggedWorkspace, tagId: string, selected: boolean) => void
   selectFilter: (tagId: string, selected: boolean) => void
   clearFilter: () => void
+  deleteTag: (tagId: string) => void
 }
 
 // Renderer storage is isolated by the application's user-data directory, just like its theme.
@@ -40,7 +42,8 @@ export const useWorkspaceTagsStore = create<WorkspaceTagsState>()(
               : data.filterIds.filter((id) => id !== tagId)
           }
         })),
-      clearFilter: () => set(({ data }) => ({ data: { ...data, filterIds: [] } }))
+      clearFilter: () => set(({ data }) => ({ data: { ...data, filterIds: [] } })),
+      deleteTag: (tagId) => set(({ data }) => ({ data: deleteWorkspaceTag(data, tagId) }))
     }),
     {
       name: 'orca-workspace-tags',

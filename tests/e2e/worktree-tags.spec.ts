@@ -11,6 +11,16 @@ async function addTag(page: Page, name: string, color: string) {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
 }
 
+async function openTags(page: Page, worktreeId: string) {
+  const title = worktreeRow(page, worktreeId).locator('[data-worktree-title-inline-rename]').first()
+  const name = await title.innerText()
+  await title.hover()
+  const details = page
+    .locator('[data-slot="hover-card-content"]')
+    .filter({ has: page.getByText(name, { exact: true }) })
+  await details.getByRole('button', { name: /^(Add|Edit) tags$/ }).click()
+}
+
 async function openTagFilter(page: Page) {
   await page.getByRole('button', { name: /^Workspace options/ }).click()
   await page.getByRole('menuitem', { name: /^Tags/ }).hover()
@@ -39,9 +49,16 @@ test('colored tag dots, tag filtering, removal, and reload persistence', async (
   }, primaryId)
   const primary = worktreeRow(page, primaryId)
   const secondary = worktreeRow(page, secondaryId)
-  await primary.getByRole('button', { name: 'Add tags', exact: true }).click()
+  await expect(primary.getByRole('button', { name: /tags/i })).toHaveCount(0)
+  await expect(primary.locator('[data-worktree-tags]')).toHaveCount(0)
+  await openTags(page, primaryId)
   await addTag(page, 'Urgent', '#ef4444')
   await addTag(page, 'Review', '#3b82f6')
+  await addTag(page, 'Duplicate', '#EF4444')
+  await expect(page.getByRole('alert')).toContainText('hex color is already used')
+  await expect(primary.getByRole('img', { name: 'Duplicate', exact: true })).toHaveCount(0)
+  await addTag(page, 'Blocked', '#eab308')
+  await expect(primary.locator('[data-worktree-tags] [role="img"]')).toHaveCount(3)
   await page.keyboard.press('Escape')
   await expect(page.getByRole('textbox', { name: 'New tag' })).not.toBeVisible()
   await expect(primary.getByRole('img', { name: 'Urgent', exact: true })).toHaveCSS(
@@ -59,7 +76,7 @@ test('colored tag dots, tag filtering, removal, and reload persistence', async (
   })
   await primary.screenshot({ path: testInfo.outputPath('tag-dots-dark.png') })
 
-  await secondary.getByRole('button', { name: 'Add tags', exact: true }).click()
+  await openTags(page, secondaryId)
   await page.getByRole('checkbox', { name: 'Urgent', exact: true }).check()
   await page.keyboard.press('Escape')
   await expect(secondary.getByRole('img', { name: 'Urgent', exact: true })).toBeVisible()
@@ -83,10 +100,43 @@ test('colored tag dots, tag filtering, removal, and reload persistence', async (
   await page.getByRole('menuitem', { name: 'Clear tag filter', exact: true }).click()
   await expect(secondary).toBeVisible()
 
-  await primary.getByRole('button', { name: 'Edit tags: Urgent, Review', exact: true }).click()
+  await openTags(page, primaryId)
   await page.getByRole('checkbox', { name: 'Urgent', exact: true }).uncheck()
   await page.keyboard.press('Escape')
   await expect(primary.getByRole('img', { name: 'Urgent', exact: true })).toHaveCount(0)
   await expect(primary.getByRole('img', { name: 'Review', exact: true })).toBeVisible()
   await expect(secondary.getByRole('img', { name: 'Urgent', exact: true })).toBeVisible()
+
+  await openTags(page, primaryId)
+  await page.getByRole('button', { name: 'Delete tag Urgent', exact: true }).click()
+  const confirmation = page.getByRole('dialog', { name: 'Delete tag “Urgent”?' })
+  await expect(confirmation).toBeVisible()
+  await expect(confirmation.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused()
+  await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(secondary.getByRole('img', { name: 'Urgent', exact: true })).toBeVisible()
+  await expect(page.getByRole('checkbox', { name: 'Urgent', exact: true })).not.toBeChecked()
+  await page.getByRole('button', { name: 'Delete tag Urgent', exact: true }).click()
+  await confirmation.getByRole('button', { name: 'Delete tag', exact: true }).click()
+  await expect(confirmation).not.toBeVisible()
+  await expect(page.getByRole('checkbox', { name: 'Urgent', exact: true })).toHaveCount(0)
+  await expect(secondary.getByRole('img', { name: 'Urgent', exact: true })).toHaveCount(0)
+  await page.getByRole('checkbox', { name: 'Review', exact: true }).uncheck()
+  await page.getByRole('checkbox', { name: 'Blocked', exact: true }).uncheck()
+  await page.getByRole('button', { name: 'Close tags', exact: true }).click()
+  await expect(primary.locator('[data-worktree-tags]')).toHaveCount(0)
+  await expect(primary.getByRole('button', { name: /tags/i })).toHaveCount(0)
+  await primary.screenshot({ path: testInfo.outputPath('untagged-title.png') })
+
+  for (const compact of [true, false]) {
+    await page.evaluate(async (compact) => {
+      await window.__store?.getState().updateSettings({
+        experimentalNewWorktreeCardStyle: false,
+        compactWorktreeCards: compact
+      })
+    }, compact)
+    await expect(primary.getByRole('button', { name: /tags/i })).toHaveCount(0)
+    await openTags(page, primaryId)
+    await expect(page.getByRole('textbox', { name: 'New tag' })).toBeVisible()
+    await page.getByRole('button', { name: 'Close tags', exact: true }).click()
+  }
 })

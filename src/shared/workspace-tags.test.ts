@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   assignWorkspaceTag,
+  deleteWorkspaceTag,
+  nextWorkspaceTagColor,
   EMPTY_WORKSPACE_TAGS,
   getWorkspaceTags,
   getWorkspaceTagKey,
@@ -52,6 +54,33 @@ describe('workspace tags', () => {
       workspaceMatchesTagFilter(workspace, { ...state, filterIds: [review.id, urgent.id] })
     ).toBe(true)
     expect(workspaceMatchesTagFilter({ id: 'untagged' }, state)).toBe(true)
+  })
+
+  it.each(['#aabbcc', '#AABBCC', '#abc'])('rejects the same normalized hex color: %s', (color) => {
+    const state = saveWorkspaceTag(EMPTY_WORKSPACE_TAGS, {
+      id: 'one',
+      name: 'One',
+      color: '#aabbcc'
+    })
+    expect(() => saveWorkspaceTag(state, { id: 'two', name: 'Two', color })).toThrow(
+      'hex color is already used'
+    )
+  })
+
+  it('offers an unused default color for the next tag', () => {
+    const color = nextWorkspaceTagColor(EMPTY_WORKSPACE_TAGS)
+    const state = saveWorkspaceTag(EMPTY_WORKSPACE_TAGS, { id: 'one', name: 'One', color })
+    expect(nextWorkspaceTagColor(state)).not.toBe(color)
+  })
+
+  it('deletes a tag from all cards and filters, freeing its color for reuse', () => {
+    const other = { id: 'other', hostId: 'local' as const }
+    const state = assignWorkspaceTag(saveWorkspaceTag(tagged(), review), other, urgent.id, true)
+    const deleted = deleteWorkspaceTag({ ...state, filterIds: [urgent.id, review.id] }, urgent.id)
+    expect(deleted.definitions).toEqual([review])
+    expect(deleted.assignments).toEqual({})
+    expect(deleted.filterIds).toEqual([review.id])
+    expect(() => saveWorkspaceTag(deleted, { ...urgent, id: 'replacement' })).not.toThrow()
   })
 
   it('validates names and colors and rejects duplicate names', () => {

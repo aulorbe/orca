@@ -25,6 +25,16 @@ it('persists assignments and tag filters and restores them after rehydration', a
   expect(useWorkspaceTagsStore.getState().data.filterIds).toEqual([])
 })
 
+it('persists deletion across every card and clears a deleted tag filter', async () => {
+  const actions = useWorkspaceTagsStore.getState()
+  actions.addTag(tag, workspace)
+  actions.assignTag({ id: 'other', hostId: 'local' }, tag.id, true)
+  actions.selectFilter(tag.id, true)
+  actions.deleteTag(tag.id)
+  await useWorkspaceTagsStore.persist.rehydrate()
+  expect(useWorkspaceTagsStore.getState().data).toEqual(EMPTY_WORKSPACE_TAGS)
+})
+
 it('keeps quick successive selections and removes an assignment independently', () => {
   const second = { id: 'review', name: 'Review', color: '#3b82f6' }
   const actions = useWorkspaceTagsStore.getState()

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { normalizeRepoBadgeColor } from './repo-badge-color'
+import { DEFAULT_REPO_BADGE_COLOR, REPO_COLORS } from './constants'
 import { composeWorktreeHostIdentity } from './worktree/host-qualified-identity'
 import type { Worktree } from './worktree/types'
 
@@ -127,6 +128,14 @@ export function saveWorkspaceTag(state: WorkspaceTags, tag: WorkspaceTag): Works
   ) {
     throw new Error('A tag with that name already exists.')
   }
+  if (
+    state.definitions.some(
+      (existing) =>
+        existing.id !== tag.id && normalizeRepoBadgeColor(existing.color) === normalized.color
+    )
+  ) {
+    throw new Error('That hex color is already used by another tag. Choose a different color.')
+  }
   const exists = state.definitions.some((existing) => existing.id === tag.id)
   return {
     ...state,
@@ -134,4 +143,16 @@ export function saveWorkspaceTag(state: WorkspaceTags, tag: WorkspaceTag): Works
       ? state.definitions.map((existing) => (existing.id === tag.id ? normalized : existing))
       : [...state.definitions, normalized]
   }
+}
+
+export function deleteWorkspaceTag(state: WorkspaceTags, tagId: string): WorkspaceTags {
+  return normalizeWorkspaceTags({
+    ...state,
+    definitions: state.definitions.filter((tag) => tag.id !== tagId)
+  })
+}
+
+export function nextWorkspaceTagColor(state: WorkspaceTags): string {
+  const used = new Set(state.definitions.map((tag) => normalizeRepoBadgeColor(tag.color)))
+  return REPO_COLORS.find((color) => !used.has(color)) ?? DEFAULT_REPO_BADGE_COLOR
 }
