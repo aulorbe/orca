@@ -1,4 +1,6 @@
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
+import { getCustomWorkspaceGroupKey } from '../../../../../../shared/custom-workspace-groups'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { WorkspaceStatusDefinition, Worktree } from '../../../../../../shared/worktree/types'
 import { getWorkspaceStatus, getWorkspaceStatusGroupKey } from '../../workspace-status'
@@ -44,6 +46,10 @@ export function getGroupKeysForWorktree(
   projectGroups: readonly ProjectGroup[] = [],
   projectGrouping?: ProjectGroupingModel
 ): string[] {
+  const customGroups = useCustomWorkspaceGroups.getState().data
+  if (customGroups.enabled) {
+    return [getCustomWorkspaceGroupKey(customGroups, worktree)]
+  }
   const groupKey = getGroupKeyForWorktree(
     groupBy,
     worktree,

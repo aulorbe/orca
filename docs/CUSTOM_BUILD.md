@@ -54,5 +54,18 @@ Use **Workspace options → Tags** to filter cards. Multiple selections match an
 **Clear tag filter** shows all cards again. Tags and the selected filter are saved locally in
 Custom's renderer storage, not synced to GitHub or other Orca installations.
 
+## Custom grouping
+
+Choose **Workspace options → Group by → Custom**, then **Manage custom groups…**. There is one
+saved set of groups: add names, rename them, reorder with the arrows, or delete a group.
+
+Hover a card and choose its **Custom group**. Each card belongs to one group; cards without a
+group appear under **Ungrouped**. Deleting a group moves its cards to Ungrouped—it does not delete
+workspaces. Pinned cards keep the existing Pinned section behavior.
+
+Groups are saved locally and do not change statuses or tags. Switching back to another grouping
+option keeps your custom groups for later. This organizes the sidebar; the status board keeps its
+existing columns.
+
 The original `pnpm build:mac` packaging path remains available and still produces **Orca.app**.
 Use **`pnpm build:mac:custom`** for the side-by-side application.

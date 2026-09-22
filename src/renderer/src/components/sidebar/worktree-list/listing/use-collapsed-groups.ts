@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import type { AppState } from '@/store/types'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../../shared/repo-types'
@@ -32,6 +33,7 @@ export function useEffectiveCollapsedGroups(args: {
   folderWorkspaces: readonly FolderWorkspace[]
   defaultHostId: ExecutionHostId
 }): Set<string> {
+  const customGroups = useCustomWorkspaceGroups((s) => s.data)
   const {
     collapsedGroups,
     agentSendTargetWorktreeId,
@@ -50,6 +52,8 @@ export function useEffectiveCollapsedGroups(args: {
     defaultHostId
   } = args
   return useMemo(() => {
+    // Group assignments can change without a worktree metadata update.
+    void customGroups
     if (!agentSendTargetWorktreeId) {
       return collapsedGroups
     }
@@ -116,6 +120,7 @@ export function useEffectiveCollapsedGroups(args: {
     worktreeLineageById,
     worktreeMap,
     folderWorkspaces,
-    defaultHostId
+    defaultHostId,
+    customGroups
   ])
 }

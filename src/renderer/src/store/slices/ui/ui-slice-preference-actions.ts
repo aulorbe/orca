@@ -1,4 +1,5 @@
 import type { UISlice, UISliceGet, UISliceSet } from './ui-slice-contract'
+import { useCustomWorkspaceGroups } from '../../custom-workspace-groups'
 import {
   DEFAULT_AGENTS_GROUP_BY,
   DEFAULT_AGENTS_READ_FILTER
@@ -46,6 +47,10 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
     groupBy: 'repo',
     // Why: group keys are mode-specific, so clear collapsed state on mode switch — stale keys are meaningless and accumulate.
     setGroupBy: (g) => {
+      const custom = useCustomWorkspaceGroups.getState()
+      if (custom.data.enabled) {
+        custom.setEnabled(false)
+      }
       window.api.ui.set({ groupBy: g, collapsedGroups: [] }).catch(console.error)
       set({ groupBy: g, collapsedGroups: new Set<string>() })
     },

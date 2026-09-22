@@ -175,7 +175,11 @@ export function renderWorktreeSectionHeaderRow(args: {
   // Why: repo/project/status/pinned share compact section chrome; flat "All" stays a simple label.
   const showHeaderCollapseAffordance =
     row.count > 0 &&
-    (isRepoHeader || isProjectGroupHeader || headerWorkspaceStatus !== null || isPinnedHeader)
+    (isRepoHeader ||
+      isProjectGroupHeader ||
+      headerWorkspaceStatus !== null ||
+      isPinnedHeader ||
+      row.customGroup === true)
   return (
     <div
       key={vItem.key}
@@ -207,6 +211,7 @@ export function renderWorktreeSectionHeaderRow(args: {
         tabIndex={0}
         aria-expanded={showHeaderCollapseAffordance ? !isHeaderCollapsed : undefined}
         data-repo-header-id={projectIdForHeader}
+        data-custom-group-key={row.customGroup ? row.key : undefined}
         data-repo-header-index={repoHeaderIndex}
         data-repo-header-bucket={repoHeaderBucketKey}
         data-repo-header-section-end={

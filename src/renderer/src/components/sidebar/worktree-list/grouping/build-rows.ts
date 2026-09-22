@@ -44,6 +44,8 @@ import type {
 } from './row-types'
 import { getRenderedNaturalAnchorRepoIds, withRepoSectionDisplayLabels } from './section-order'
 import { buildOrderedGroups } from './worktree-grouping'
+import { appendCustomGroupRows } from './custom-group-rows'
+import type { CustomWorkspaceGroups } from '../../../../../../shared/custom-workspace-groups'
 
 export function buildRows(
   groupBy: WorktreeGroupBy,
@@ -70,8 +72,12 @@ export function buildRows(
   folderWorkspaces: readonly FolderWorkspace[] = [],
   hostLabelById?: ReadonlyMap<string, string>,
   defaultHostId: ExecutionHostId = LOCAL_EXECUTION_HOST_ID,
-  pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy = getPinnedWorktreeDisplayPolicy(settings)
+  pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy = getPinnedWorktreeDisplayPolicy(settings),
+  customGroups?: CustomWorkspaceGroups
 ): Row[] {
+  if (customGroups?.enabled) {
+    groupBy = 'none'
+  }
   const result: Row[] = []
   const projectIndex = buildProjectGroupingIndex(projectGrouping)
   // Membership is decided once, above the groupBy switch: every mode renders the
@@ -151,6 +157,25 @@ export function buildRows(
     noticeHostContextLabelByRepoId,
     mixedWorktreeHostContextLabels
   )
+  if (customGroups?.enabled) {
+    appendCustomGroupRows(
+      {
+        result,
+        repoMap,
+        defaultHostId,
+        collapsedGroups,
+        lineageById,
+        worktreeMap,
+        nestLineage,
+        cyclicLineageIds,
+        mixedWorktreeHostContextLabels
+      },
+      customGroups,
+      naturalWorktrees,
+      renderableFolderWorkspaces
+    )
+    return result
+  }
   if (groupBy === 'none') {
     // Why folder workspaces gate this too: an account with only folder
     // workspaces rendered nothing at all in flat mode before (#15362).

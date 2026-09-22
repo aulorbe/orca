@@ -1,8 +1,13 @@
 import { z } from 'zod'
 import { normalizeRepoBadgeColor } from './repo-badge-color'
 import { DEFAULT_REPO_BADGE_COLOR, REPO_COLORS } from './constants'
-import { composeWorktreeHostIdentity } from './worktree/host-qualified-identity'
-import type { Worktree } from './worktree/types'
+import {
+  getWorkspaceCardKey as getWorkspaceTagKey,
+  getWorkspaceCardKeys as workspaceTagKeys,
+  type WorkspaceCardIdentity
+} from './workspace-card-identity'
+
+export { getWorkspaceTagKey }
 
 export const WORKSPACE_TAG_NAME_LIMIT = 40
 
@@ -18,7 +23,7 @@ export const WorkspaceTagsSchema = z.object({
 })
 export type WorkspaceTag = z.infer<typeof WorkspaceTagSchema>
 export type WorkspaceTags = z.infer<typeof WorkspaceTagsSchema>
-export type TaggedWorkspace = Pick<Worktree, 'id' | 'hostId' | 'instanceId' | 'priorWorktreeIds'>
+export type TaggedWorkspace = WorkspaceCardIdentity
 
 export const EMPTY_WORKSPACE_TAGS: WorkspaceTags = {
   definitions: [],
@@ -52,22 +57,6 @@ export function normalizeWorkspaceTags(value: unknown): WorkspaceTags {
     ),
     filterIds: knownIds(parsed.data.filterIds)
   }
-}
-
-export function getWorkspaceTagKey(workspace: TaggedWorkspace): string {
-  return composeWorktreeHostIdentity(
-    workspace.hostId,
-    workspace.instanceId ? `instance:${workspace.instanceId}` : workspace.id
-  )
-}
-
-function workspaceTagKeys(workspace: TaggedWorkspace): string[] {
-  return [
-    getWorkspaceTagKey(workspace),
-    ...(workspace.priorWorktreeIds ?? []).map((id) =>
-      composeWorktreeHostIdentity(workspace.hostId, id)
-    )
-  ]
 }
 
 export function getWorkspaceTagIds(state: WorkspaceTags, workspace: TaggedWorkspace): string[] {

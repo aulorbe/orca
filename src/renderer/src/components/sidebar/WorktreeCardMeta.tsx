@@ -31,6 +31,7 @@ import { WorktreeCardCliDetailSection } from './WorktreeCardCliDetailSection'
 import { WorktreeCardIssueDetailSection } from './WorktreeCardIssueDetailSection'
 import { WorktreeCardHoverIdentityHeader } from './WorktreeCardHoverIdentityHeader'
 import { WorktreeTags } from './WorktreeTags'
+import { WorktreeCustomGroup } from './WorktreeCustomGroup'
 import { CommentMarkdownAsync, preloadCommentMarkdown } from './comment-markdown-lazy'
 
 const COMMENT_MARKDOWN_CLASS_NAME =
@@ -96,6 +97,7 @@ export function WorktreeCardDetailsHover({
   } = hoverControl ?? internalHoverControl
   const [workspaceTitleEditing, setWorkspaceTitleEditing] = React.useState(false)
   const [tagEditorOpen, setTagEditorOpen] = React.useState(false)
+  const [groupPickerOpen, setGroupPickerOpen] = React.useState(false)
   const pendingWorkspaceTitleCloseRef = React.useRef(false)
   const handleWorkspaceTitleEditingChange = React.useCallback(
     (editing: boolean): void => {
@@ -185,7 +187,7 @@ export function WorktreeCardDetailsHover({
 
   return (
     <HoverCard
-      open={hoverOpen || workspaceTitleEditing || tagEditorOpen}
+      open={hoverOpen || workspaceTitleEditing || tagEditorOpen || groupPickerOpen}
       onOpenChange={handleEffectiveHoverOpenChange}
       openDelay={openDelay}
       closeDelay={closeDelay}
@@ -378,6 +380,9 @@ export function WorktreeCardDetailsHover({
           )}
 
           {detailsAfter}
+          {worktree && (
+            <WorktreeCustomGroup worktree={worktree} onOpenChange={setGroupPickerOpen} />
+          )}
           {worktree && <WorktreeTags worktree={worktree} onOpenChange={setTagEditorOpen} />}
         </SelectedTextCopyMenu>
       </HoverCardContent>

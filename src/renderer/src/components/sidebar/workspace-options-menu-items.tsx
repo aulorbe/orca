@@ -1,8 +1,10 @@
 import { useMemo, type JSX } from 'react'
 import { useAppStore } from '@/store'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import { useWorkspaceTagsStore } from '@/store/workspace-tags'
 import {
   DropdownMenuLabel,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -89,10 +91,13 @@ export function useWorkspaceOptionsFilterBadge(): {
 }
 
 export function WorkspaceOptionsMenuItems({
-  preserveWorkspaceBoardOpen = false
+  preserveWorkspaceBoardOpen = false,
+  onManageCustomGroups
 }: {
   preserveWorkspaceBoardOpen?: boolean
+  onManageCustomGroups?: () => void
 }): JSX.Element {
+  const customEnabled = useCustomWorkspaceGroups((s) => s.data.enabled)
   const repos = useAppStore((s) => s.repos)
   const setWorkspaceHostScope = useAppStore((s) => s.setWorkspaceHostScope)
   const visibleWorkspaceHostIds = useAppStore((s) => s.visibleWorkspaceHostIds)
@@ -147,6 +152,9 @@ export function WorkspaceOptionsMenuItems({
       <div className="px-2 pt-0.5 pb-1">
         <SidebarGroupByToggle groupBy={groupBy} setGroupBy={setGroupBy} />
       </div>
+      {customEnabled && onManageCustomGroups && (
+        <DropdownMenuItem onSelect={onManageCustomGroups}>Manage custom groups…</DropdownMenuItem>
+      )}
 
       <DropdownMenuSeparator />
       <DropdownMenuSub>

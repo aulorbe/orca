@@ -20,6 +20,7 @@ export type GroupHeaderRow = {
   label: string
   count: number
   tone: string
+  customGroup?: boolean
   icon?: React.ComponentType<{ className?: string }>
   repo?: Repo
   projectGroup?: ProjectGroup | { id: null; name: 'Ungrouped'; tabOrder: number }

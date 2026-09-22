@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 import { useAppStore } from '@/store'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import { useShallow } from 'zustand/react/shallow'
 import {
   useAllWorktrees,
@@ -72,7 +73,9 @@ const WorktreeList = React.memo(function WorktreeList({
     () => getActiveSidebarWorkspaceId(activeWorkspaceKey, activeWorktreeId),
     [activeWorkspaceKey, activeWorktreeId]
   )
-  const groupBy = useAppStore((s) => s.groupBy)
+  const savedGroupBy = useAppStore((s) => s.groupBy)
+  const customGrouping = useCustomWorkspaceGroups((s) => s.data.enabled)
+  const groupBy = customGrouping ? 'none' : savedGroupBy
   const workspaceStatuses = useAppStore((s) => s.workspaceStatuses)
   const sortBy = useAppStore((s) => s.sortBy)
   const projectOrderBy = useAppStore((s) => s.projectOrderBy)
@@ -284,7 +287,7 @@ const WorktreeList = React.memo(function WorktreeList({
       />
       <VirtualizedWorktreeViewport
         // Why: status headers move during wake (inactive -> active); key only on grouping mode so row identity survives.
-        key={`group:${groupBy}:host:${filterState.visibleWorkspaceHostIds?.join(',') ?? 'all'}:lineage`}
+        key={`group:${customGrouping ? 'custom' : groupBy}:host:${filterState.visibleWorkspaceHostIds?.join(',') ?? 'all'}:lineage`}
         rows={rowModel.sectionRows}
         // Why: full-page nav views aren't scoped to a worktree, so no sidebar card should look selected.
         activeWorktreeId={

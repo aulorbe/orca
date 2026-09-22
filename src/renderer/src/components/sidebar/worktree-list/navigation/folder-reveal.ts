@@ -1,4 +1,6 @@
 import type { FolderWorkspace } from '../../../../../../shared/folder-workspace-types'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
+import { getCustomWorkspaceGroupKey } from '../../../../../../shared/custom-workspace-groups'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { WorkspaceStatusDefinition, Worktree } from '../../../../../../shared/worktree/types'
 import { folderWorkspaceToWorktree } from '../../../../../../shared/folder-workspace-worktree'
@@ -104,5 +106,11 @@ export function getFolderWorkspaceRevealGroupKeys(
       `host:${getFolderWorkspaceHostId(folderWorkspace, owningGroup, options.defaultHostId)}`
     )
   }
-  return keys
+  const customGroups = useCustomWorkspaceGroups.getState().data
+  return customGroups.enabled
+    ? [
+        getCustomWorkspaceGroupKey(customGroups, folderWorkspaceToWorktree(folderWorkspace)),
+        ...keys.filter((key) => key.startsWith('host:'))
+      ]
+    : keys
 }

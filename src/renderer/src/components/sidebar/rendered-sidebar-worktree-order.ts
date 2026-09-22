@@ -1,5 +1,6 @@
 import type { Worktree } from '../../../../shared/worktree/types'
 import type { AppState } from '@/store/types'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import { getHostDisplayLabelOverrides } from '../../../../shared/host-setting-overrides'
 import {
   ALL_EXECUTION_HOSTS_SCOPE,
@@ -82,7 +83,8 @@ export function computeRenderedSidebarWorktrees(
     // Why no hostLabelById: it only feeds display-only host context labels, never row order.
     undefined,
     defaultHostId,
-    pinnedDisplayPolicy
+    pinnedDisplayPolicy,
+    useCustomWorkspaceGroups.getState().data
   )
 
   // Why lazy: with no host filter, addHostSectionRows is a pass-through, so skip building the whole host registry on a keystroke.
