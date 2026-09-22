@@ -1,4 +1,5 @@
 import type { Repo } from '../../../../shared/repo-types'
+import { useWorkspaceTagsStore } from '@/store/workspace-tags'
 import { getSettingsFocusedExecutionHostId } from '../../../../shared/execution-host'
 import { getWorktreeIdsWithLiveAgent } from '@/lib/worktree-activity-state'
 import type { useAppStore } from '@/store'
@@ -22,6 +23,7 @@ export function buildVisibleWorktreeOptionsFromState(
 ): VisibleWorktreeOptions {
   return {
     filterRepoIds: state.filterRepoIds,
+    workspaceTags: useWorkspaceTagsStore.getState().data,
     showSleepingWorkspaces: state.showSleepingWorkspaces,
     tabsByWorktree: state.tabsByWorktree,
     ptyIdsByTabId: state.ptyIdsByTabId,

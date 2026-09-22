@@ -14,6 +14,7 @@ import { getReviewLabel } from './worktree-review-helpers'
 import type { WorktreeCardPresentation } from './worktree-card-presentation'
 import { WorktreeCardSshHostControl } from './WorktreeCardSshHostControl'
 import { WorktreeTitleInlineRename } from './WorktreeTitleInlineRename'
+import { WorktreeTags } from './WorktreeTags'
 import type { WorktreeCardController } from './use-worktree-card-controller'
 
 // Why: pinned repo icon and compact inline badge share this chip shell so both repo cues read as the same affordance.
@@ -185,6 +186,8 @@ export function WorktreeCardHeader({
           }
           onBeginEditingConsumed={affiliateListMode ? undefined : () => setRenamingWorktreeId(null)}
         />
+
+        <WorktreeTags worktree={worktree} onOpen={card.detailsHoverControl.closeHover} />
 
         {prDisplay && (
           <span

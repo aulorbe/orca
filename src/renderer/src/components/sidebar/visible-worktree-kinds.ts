@@ -1,5 +1,6 @@
 import type { ExecutionHostId, ExecutionHostScope } from '../../../../shared/execution-host'
 import type { Worktree } from '../../../../shared/worktree/types'
+import type { WorkspaceTags } from '../../../../shared/workspace-tags'
 import { getWorktreeGitIdentityDisplay } from '@/lib/worktree-git-identity-display'
 
 /**
@@ -52,6 +53,7 @@ export function isDetachedHeadWorkspace(worktree: Worktree): boolean {
 export type SidebarFilterState = {
   showSleepingWorkspaces: boolean
   filterRepoIds: readonly string[]
+  workspaceTags?: WorkspaceTags
   hideDefaultBranchWorkspace: boolean
   hideAutomationGeneratedWorkspaces: boolean
   hideCliCreatedWorkspaces: boolean

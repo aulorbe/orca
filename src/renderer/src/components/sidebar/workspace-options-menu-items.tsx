@@ -1,5 +1,6 @@
 import { useMemo, type JSX } from 'react'
 import { useAppStore } from '@/store'
+import { useWorkspaceTagsStore } from '@/store/workspace-tags'
 import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
@@ -21,6 +22,7 @@ import { PROJECT_ORDER_OPTIONS, SORT_OPTIONS } from './sidebar-workspace-option-
 import { WorktreeCardDisplayMenuSection } from './WorktreeCardDisplayMenuSection'
 import { translate } from '@/i18n/i18n'
 import { SidebarGroupByToggle } from './SidebarGroupByToggle'
+import { WorkspaceTagFilter } from './WorkspaceTagFilter'
 
 export function useWorkspaceOptionsFilterBadge(): {
   hasAnyFilter: boolean
@@ -35,6 +37,7 @@ export function useWorkspaceOptionsFilterBadge(): {
   const hideWorkspacesFromOtherDevices = useAppStore((s) => s.hideWorkspacesFromOtherDevices)
   const alwaysShowDefaultBranchWorkspace = useAppStore((s) => s.alwaysShowDefaultBranchWorkspace)
   const filterRepoIds = useAppStore((s) => s.filterRepoIds)
+  const tagFilterCount = useWorkspaceTagsStore((s) => s.data.filterIds.length)
   const repos = useAppStore((s) => s.repos)
   const visibleWorkspaceHostIds = useAppStore((s) => s.visibleWorkspaceHostIds)
 
@@ -64,6 +67,7 @@ export function useWorkspaceOptionsFilterBadge(): {
     hideWorkspacesFromOtherDevices ||
     hasSleepingExemptionFilter ||
     hasRepoFilter ||
+    tagFilterCount > 0 ||
     hasHostVisibilityFilter
   const activeFilterCount =
     (hasSleepingFilter ? 1 : 0) +
@@ -74,7 +78,8 @@ export function useWorkspaceOptionsFilterBadge(): {
     (hideWorkspacesFromOtherDevices ? 1 : 0) +
     (hasSleepingExemptionFilter ? 1 : 0) +
     (hasHostVisibilityFilter ? 1 : 0) +
-    selectedCount
+    selectedCount +
+    tagFilterCount
 
   return {
     hasAnyFilter,
@@ -235,6 +240,7 @@ export function WorkspaceOptionsMenuItems({
       <WorktreeCardDisplayMenuSection preserveWorkspaceBoardOpen={preserveWorkspaceBoardOpen} />
       <DropdownMenuSeparator />
       <SidebarWorkspaceFilterSection />
+      <WorkspaceTagFilter preserveWorkspaceBoardOpen={preserveWorkspaceBoardOpen} />
     </>
   )
 }

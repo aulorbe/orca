@@ -1,4 +1,6 @@
 import { useMemo } from 'react'
+import { folderWorkspaceToWorktree } from '../../../../../../shared/folder-workspace-worktree'
+import { workspaceMatchesTagFilter } from '../../../../../../shared/workspace-tags'
 import type { FolderWorkspace } from '../../../../../../shared/folder-workspace-types'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../../shared/repo-types'
@@ -51,6 +53,8 @@ export function useSidebarHostVisibleScope(args: {
       projectGroups,
       visibleHostIdSet,
       defaultHostId
+    ).filter((workspace) =>
+      workspaceMatchesTagFilter(folderWorkspaceToWorktree(workspace), filterState.workspaceTags)
     )
     if (!hideWorkspacesFromOtherDevices) {
       return hostVisibleWorkspaces
@@ -63,6 +67,7 @@ export function useSidebarHostVisibleScope(args: {
     args.pairedDeviceIdsByEnvironment,
     defaultHostId,
     folderWorkspaces,
+    filterState.workspaceTags,
     hideWorkspacesFromOtherDevices,
     projectGroups,
     visibleHostIdSet

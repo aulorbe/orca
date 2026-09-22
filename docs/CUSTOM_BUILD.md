@@ -41,5 +41,14 @@ The custom app may request its own permissions; stock Orca's grants do not neces
 - Stock release updates are disabled for Orca Custom, including manual channel switching. Pull your
   fork's latest changes, rebuild, and replace only **Orca Custom.app** to update it.
 
+## Card tags
+
+Click a card's tag icon (or its colored dots) to add a tag name and color. Check an existing tag
+to reuse it; uncheck it to remove it from that card. Hover the dots to see their names.
+
+Use **Workspace options → Tags** to filter cards. Multiple selections match any selected tag;
+**Clear tag filter** shows all cards again. Tags and the selected filter are saved locally in
+Custom's renderer storage, not synced to GitHub or other Orca installations.
+
 The original `pnpm build:mac` packaging path remains available and still produces **Orca.app**.
 Use **`pnpm build:mac:custom`** for the side-by-side application.

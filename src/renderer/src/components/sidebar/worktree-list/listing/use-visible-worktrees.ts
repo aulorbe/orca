@@ -38,6 +38,7 @@ export function useVisibleSidebarWorktrees(args: {
   const {
     showSleepingWorkspaces,
     filterRepoIds,
+    workspaceTags,
     hideDefaultBranchWorkspace,
     hideAutomationGeneratedWorkspaces,
     hideCliCreatedWorkspaces,
@@ -81,6 +82,7 @@ export function useVisibleSidebarWorktrees(args: {
     void agentStatusEpoch
     return computeVisibleWorktrees(worktreesByRepo, sortedIds, {
       filterRepoIds,
+      workspaceTags,
       showSleepingWorkspaces,
       tabsByWorktree,
       ptyIdsByTabId,
@@ -115,6 +117,7 @@ export function useVisibleSidebarWorktrees(args: {
     agentStatusEpoch,
     agentStatusNow,
     filterRepoIds,
+    workspaceTags,
     showSleepingWorkspaces,
     hideDefaultBranchWorkspace,
     hideAutomationGeneratedWorkspaces,

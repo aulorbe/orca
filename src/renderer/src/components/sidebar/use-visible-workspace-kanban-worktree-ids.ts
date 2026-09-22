@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useAppStore } from '@/store'
+import { useWorkspaceTagsStore } from '@/store/workspace-tags'
 import { getAgentStatusEpochNow } from '@/lib/agent-status-epoch-clock'
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
@@ -47,6 +48,7 @@ export function useVisibleWorkspaceKanbanWorktreeIds({
   const visibleWorkspaceHostIds = useAppStore((s) => s.visibleWorkspaceHostIds)
   const settings = useAppStore((s) => s.settings)
   const filterRepoIds = useAppStore((s) => s.filterRepoIds)
+  const workspaceTags = useWorkspaceTagsStore((s) => s.data)
   const tabsByWorktree = useAppStore((s) => (!showSleepingWorkspaces ? s.tabsByWorktree : null))
   const ptyIdsByTabId = useAppStore((s) => (!showSleepingWorkspaces ? s.ptyIdsByTabId : null))
   const browserTabsByWorktree = useAppStore((s) =>
@@ -81,6 +83,7 @@ export function useVisibleWorkspaceKanbanWorktreeIds({
     return new Set(
       computeVisibleWorktrees(worktreesByRepo, sortedIds, {
         filterRepoIds,
+        workspaceTags,
         showSleepingWorkspaces,
         tabsByWorktree,
         ptyIdsByTabId,
@@ -110,6 +113,7 @@ export function useVisibleWorkspaceKanbanWorktreeIds({
     allWorktrees,
     browserTabsByWorktree,
     filterRepoIds,
+    workspaceTags,
     hideDefaultBranchWorkspace,
     hideAutomationGeneratedWorkspaces,
     hideCliCreatedWorkspaces,

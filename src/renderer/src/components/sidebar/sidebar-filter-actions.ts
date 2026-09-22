@@ -13,6 +13,7 @@ export function sidebarHasActiveFilters(state: SidebarFilterState): boolean {
   return (
     state.showSleepingWorkspaces !== DEFAULT_SHOW_SLEEPING_WORKSPACES ||
     state.filterRepoIds.length > 0 ||
+    (state.workspaceTags?.filterIds.length ?? 0) > 0 ||
     state.hideDefaultBranchWorkspace ||
     state.hideAutomationGeneratedWorkspaces ||
     state.hideCliCreatedWorkspaces ||

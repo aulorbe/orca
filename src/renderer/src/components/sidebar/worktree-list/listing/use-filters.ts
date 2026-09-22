@@ -1,5 +1,7 @@
 import { useCallback, useMemo } from 'react'
+import { workspaceMatchesTagFilter } from '../../../../../../shared/workspace-tags'
 import { useAppStore } from '@/store'
+import { useWorkspaceTagsStore } from '@/store/workspace-tags'
 import { DEFAULT_SHOW_SLEEPING_WORKSPACES } from '../../../../../../shared/constants'
 import {
   computeClearFilterActions,
@@ -35,6 +37,7 @@ export type SidebarWorktreeFilters = ReturnType<typeof useSidebarWorktreeFilters
 export function useSidebarWorktreeFilters() {
   const showSleepingWorkspaces = useAppStore((s) => s.showSleepingWorkspaces)
   const filterRepoIds = useAppStore((s) => s.filterRepoIds)
+  const workspaceTags = useWorkspaceTagsStore((s) => s.data)
   const hideDefaultBranchWorkspace = useAppStore((s) => s.hideDefaultBranchWorkspace)
   const hideAutomationGeneratedWorkspaces = useAppStore((s) => s.hideAutomationGeneratedWorkspaces)
   const hideCliCreatedWorkspaces = useAppStore((s) => s.hideCliCreatedWorkspaces)
@@ -60,6 +63,9 @@ export function useSidebarWorktreeFilters() {
 
   const revealWorkspaceFilters = useCallback((worktree: Worktree) => {
     const state = useAppStore.getState()
+    if (!workspaceMatchesTagFilter(worktree, useWorkspaceTagsStore.getState().data)) {
+      useWorkspaceTagsStore.getState().clearFilter()
+    }
     const repo = state.repos.find((candidate) => candidate.id === worktree.repoId)
     let targetHostId = getWorktreeExecutionHostId(
       worktree,
@@ -155,7 +161,8 @@ export function useSidebarWorktreeFilters() {
       hideWorkspacesFromOtherDevices,
       alwaysShowDefaultBranchWorkspace,
       visibleWorkspaceHostIds,
-      workspaceHostScope
+      workspaceHostScope,
+      ...(workspaceTags ? { workspaceTags } : {})
     }),
     [
       showSleepingWorkspaces,
@@ -167,11 +174,15 @@ export function useSidebarWorktreeFilters() {
       hideWorkspacesFromOtherDevices,
       alwaysShowDefaultBranchWorkspace,
       visibleWorkspaceHostIds,
-      workspaceHostScope
+      workspaceHostScope,
+      workspaceTags
     ]
   )
 
   const clearFilters = useCallback(() => {
+    if (filterState.workspaceTags?.filterIds.length) {
+      useWorkspaceTagsStore.getState().clearFilter()
+    }
     const actions = computeClearFilterActions(filterState)
     if (actions.resetShowSleepingWorkspaces) {
       setShowSleepingWorkspaces(DEFAULT_SHOW_SLEEPING_WORKSPACES)
