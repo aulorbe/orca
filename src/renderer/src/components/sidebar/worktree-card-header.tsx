@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import type { Repo } from '../../../../shared/repo-types'
 import { resolveRepoHeaderColor } from './project-header-color'
 import { formatSparseDirectoryPreview, shouldBeginWorktreeRename } from './worktree-card-model'
+import { getReviewLabel } from './worktree-review-helpers'
 import type { WorktreeCardPresentation } from './worktree-card-presentation'
 import { WorktreeCardSshHostControl } from './WorktreeCardSshHostControl'
 import { WorktreeTitleInlineRename } from './WorktreeTitleInlineRename'
@@ -67,6 +68,7 @@ export function WorktreeCardHeader({
     isRuntimeDisconnected,
     runtimeHostLabel,
     visibleCardTitle,
+    prDisplay,
     isDeleting,
     showUnreadEmphasis,
     setTitleRenaming,
@@ -183,6 +185,15 @@ export function WorktreeCardHeader({
           }
           onBeginEditingConsumed={affiliateListMode ? undefined : () => setRenamingWorktreeId(null)}
         />
+
+        {prDisplay && (
+          <span
+            className="shrink-0 whitespace-nowrap text-xs tabular-nums text-muted-foreground"
+            data-worktree-review-number=""
+          >
+            {getReviewLabel(prDisplay)} #{prDisplay.number}
+          </span>
+        )}
 
         {typeof worktree.firstAgentMessageRenameError === 'string' &&
         worktree.firstAgentMessageRenameError.length > 0 &&
