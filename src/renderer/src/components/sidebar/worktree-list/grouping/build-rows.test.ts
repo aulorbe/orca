@@ -262,6 +262,7 @@ describe('buildRows with pinned worktrees', () => {
       { type: 'header', key: 'workspace-status:in-progress', count: 2 },
       { type: 'item', sectionKey: 'workspace-status:in-progress', worktree: { id: 'wt-1' } },
       { type: 'item', sectionKey: 'workspace-status:in-progress', worktree: { id: 'wt-pinned' } },
+      { type: 'header', key: 'workspace-status:blocked', count: 0 },
       { type: 'header', key: 'workspace-status:in-review', count: 0 },
       { type: 'header', key: 'workspace-status:completed', count: 0 }
     ])
@@ -308,13 +309,13 @@ describe('buildRows with pinned worktrees', () => {
   it('keeps empty status drop targets when all matching worktrees are pinned', () => {
     const allPinned = { ...unpinned1, isPinned: true }
     const rows = buildRows('workspace-status', [pinned, allPinned], repoMap, null, new Set())
-    expect(rows.filter((r) => r.type === 'header')).toHaveLength(5)
+    expect(rows.filter((r) => r.type === 'header')).toHaveLength(6)
     expect(
       rows
         .filter((r) => r.type === 'header')
         .filter((r) => r.key !== 'pinned')
         .map((r) => r.count)
-    ).toEqual([0, 0, 0, 0])
+    ).toEqual([0, 0, 0, 0, 0])
     expect(rows[0]).toMatchObject({ type: 'header', key: 'pinned', count: 2 })
   })
 
@@ -368,6 +369,7 @@ describe('buildRows with pinned worktrees', () => {
     ).toEqual([
       { key: 'workspace-status:todo', label: 'Todo' },
       { key: 'workspace-status:in-progress', label: 'In progress' },
+      { key: 'workspace-status:blocked', label: 'Blocked' },
       { key: 'workspace-status:in-review', label: 'In review' },
       { key: 'workspace-status:completed', label: 'Done' }
     ])

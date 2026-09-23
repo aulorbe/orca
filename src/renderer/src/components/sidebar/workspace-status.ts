@@ -1,4 +1,5 @@
 import React from 'react'
+import { DEFAULT_STATUS_VISUALS } from '../../../../shared/workspace-status-defaults'
 import { CircleDot } from 'lucide-react'
 import type { WorkspaceStatus, WorkspaceStatusDefinition } from '../../../../shared/worktree/types'
 import {
@@ -167,31 +168,6 @@ function getFallbackIconOption(): WorkspaceStatusIconOption {
       icon: CircleDot
     }
   )
-}
-
-const DEFAULT_STATUS_VISUALS: Record<
-  string,
-  {
-    color: string
-    icon: string
-  }
-> = {
-  todo: {
-    color: 'neutral',
-    icon: 'circle'
-  },
-  'in-progress': {
-    color: 'conductor-progress',
-    icon: 'conductor-progress'
-  },
-  'in-review': {
-    color: 'conductor-review',
-    icon: 'conductor-review'
-  },
-  completed: {
-    color: 'conductor-done',
-    icon: 'conductor-done'
-  }
 }
 
 export function getWorkspaceStatusVisualMeta(status: WorkspaceStatus | WorkspaceStatusDefinition): {

@@ -6,6 +6,7 @@ import {
 import { isExistingPersistedProfile } from '../../../shared/project-order-manual-default-notice'
 import { resolveUsagePercentageDisplayChangeNoticeDismissed } from '../../../shared/usage-percentage-display-change-notice'
 import { normalizePersistedWorkspaceStatuses } from '../../../shared/workspace-statuses'
+import { addDefaultBlockedWorkspaceStatus } from '../../../shared/workspace-status-blocked-migration'
 import {
   normalizeRightSidebarExplorerView,
   normalizeRightSidebarTab,
@@ -51,12 +52,17 @@ export function normalizeLoadedUiState(
   // Why: visual migration has its own guard so later user choices of valid legacy color/icon IDs are preserved.
   const workspaceStatusesDefaultVisualsMigrated =
     parsed.ui?._workspaceStatusesDefaultVisualsMigrated === true
-  const workspaceStatuses = normalizePersistedWorkspaceStatuses(parsed.ui?.workspaceStatuses, {
+  const workspaceBlockedStatusAdded = parsed.ui?._workspaceBlockedStatusAdded === true
+  const normalizedStatuses = normalizePersistedWorkspaceStatuses(parsed.ui?.workspaceStatuses, {
     migrateDefaultWorkflowStatuses: !workspaceStatusesDefaultWorkflowMigrated,
     repairReorderedDefaultStatuses: !workspaceStatusesReorderedDefaultRepaired,
     migrateLegacyDefaultStatusVisuals: !workspaceStatusesDefaultVisualsMigrated
   })
+  const workspaceStatuses = workspaceBlockedStatusAdded
+    ? normalizedStatuses
+    : addDefaultBlockedWorkspaceStatus(normalizedStatuses)
   if (
+    !workspaceBlockedStatusAdded ||
     !workspaceStatusesDefaultOrderMigrated ||
     !workspaceStatusesReorderedDefaultRepaired ||
     !workspaceStatusesDefaultWorkflowMigrated ||
@@ -195,6 +201,7 @@ export function normalizeLoadedUiState(
     _workspaceStatusesReorderedDefaultRepaired: true,
     _workspaceStatusesDefaultWorkflowMigrated: true,
     _workspaceStatusesDefaultVisualsMigrated: true,
+    _workspaceBlockedStatusAdded: true,
     _sortBySmartMigrated: true,
     ...(migratedCardProps !== undefined ? { worktreeCardProperties: migratedCardProps } : {}),
     // Why: keep stamping the legacy flag for rollback forward-compat; the new flag actually gates the migration.

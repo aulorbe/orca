@@ -3,12 +3,12 @@ import { rmSync, mkdtempSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import type { PersistedState } from '../shared/persisted-state-types'
+import { cloneDefaultWorkspaceStatuses } from '../shared/workspace-statuses'
 import { testState, createStore, writeDataFile, readDataFile } from './persistence-test-harness'
 import {
   REORDERED_DEFAULT_WORKSPACE_STATUSES,
   REORDERED_DONE_DEFAULT_WORKSPACE_STATUSES,
-  LEGACY_DEFAULT_WORKSPACE_STATUSES,
-  WORKFLOW_DEFAULT_WORKSPACE_STATUSES
+  LEGACY_DEFAULT_WORKSPACE_STATUSES
 } from './persistence-workspace-status-fixtures'
 
 // Stub the ~/.ssh/config parser so the SSH-import test drives the real Store with deterministic hosts, not the operator's actual ~/.ssh/config.
@@ -62,6 +62,38 @@ describe('Store', () => {
   afterEach(() => {
     rmSync(testState.dir, { recursive: true, force: true })
   })
+  it('adds Blocked to existing profiles once and respects removal on restart', async () => {
+    writeDataFile({
+      schemaVersion: 1,
+      repos: [],
+      worktreeMeta: {},
+      settings: {},
+      ui: {
+        workspaceStatuses: LEGACY_DEFAULT_WORKSPACE_STATUSES,
+        _workspaceStatusesDefaultWorkflowMigrated: true,
+        _workspaceStatusesDefaultVisualsMigrated: true,
+        _workspaceStatusesReorderedDefaultRepaired: true
+      },
+      githubCache: { pr: {}, issue: {} },
+      workspaceSession: {}
+    })
+    const store = await createStore()
+    expect(store.getUI().workspaceStatuses?.map((status) => status.id)).toEqual([
+      'todo',
+      'in-progress',
+      'blocked',
+      'in-review',
+      'completed'
+    ])
+    expect(store.getUI()._workspaceBlockedStatusAdded).toBe(true)
+    store.flush()
+    expect(readDataFile()).toMatchObject({ ui: { _workspaceBlockedStatusAdded: true } })
+    store.updateUI({ workspaceStatuses: LEGACY_DEFAULT_WORKSPACE_STATUSES })
+    store.flush()
+    const restarted = await createStore()
+    expect(restarted.getUI().workspaceStatuses).toEqual(LEGACY_DEFAULT_WORKSPACE_STATUSES)
+  })
+
   it('preserves persisted smart sort value', async () => {
     writeDataFile({
       schemaVersion: 1,
@@ -158,9 +190,10 @@ describe('Store', () => {
     })
 
     const store = await createStore()
-    expect(store.getUI().workspaceStatuses?.map((status) => status.id)).toEqual(
-      imported.map((status) => status.id)
-    )
+    expect(store.getUI().workspaceStatuses?.map((status) => status.id)).toEqual([
+      ...imported.map((status) => status.id),
+      'blocked'
+    ])
 
     const authored = Array.from({ length: 64 }, (_, index) => ({
       id: `final-${String(index + 1).padStart(3, '0')}`,
@@ -198,6 +231,7 @@ describe('Store', () => {
     expect(ui.workspaceStatuses?.map((status) => status.id)).toEqual([
       'todo',
       'in-progress',
+      'blocked',
       'in-review',
       'completed'
     ])
@@ -214,6 +248,7 @@ describe('Store', () => {
     expect(persisted.ui.workspaceStatuses?.map((status) => status.id)).toEqual([
       'todo',
       'in-progress',
+      'blocked',
       'in-review',
       'completed'
     ])
@@ -240,6 +275,7 @@ describe('Store', () => {
     expect(store.getUI().workspaceStatuses?.map((status) => status.id)).toEqual([
       'todo',
       'in-progress',
+      'blocked',
       'in-review',
       'completed'
     ])
@@ -262,7 +298,7 @@ describe('Store', () => {
     })
 
     const store = await createStore()
-    expect(store.getUI().workspaceStatuses).toEqual(WORKFLOW_DEFAULT_WORKSPACE_STATUSES)
+    expect(store.getUI().workspaceStatuses).toEqual(cloneDefaultWorkspaceStatuses())
     expect(store.getUI()._workspaceStatusesDefaultWorkflowMigrated).toBe(true)
     expect(store.getUI()._workspaceStatusesDefaultVisualsMigrated).toBe(true)
 
@@ -321,6 +357,7 @@ describe('Store', () => {
       'completed',
       'in-review',
       'in-progress',
+      'blocked',
       'todo'
     ])
   })

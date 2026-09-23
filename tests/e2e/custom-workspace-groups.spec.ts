@@ -3,6 +3,11 @@ import { test, expect } from './helpers/orca-app'
 import { waitForActiveWorktree } from './helpers/store'
 import { worktreeRow } from './worktree-row-locators'
 
+test.beforeEach(async ({ orcaPage }) => {
+  // Keep FLIP transitions from moving a card between hover and pointerdown.
+  await orcaPage.emulateMedia({ reducedMotion: 'reduce' })
+})
+
 async function options(page: Page) {
   await page.getByRole('button', { name: /^Workspace options/ }).click()
 }
@@ -363,7 +368,7 @@ test.describe('Status subgroups', () => {
     await page.keyboard.press('Escape')
     await expect(page.getByRole('menu')).toHaveCount(0)
     const headers = page.locator('[role="button"][data-workspace-status-drop-target]')
-    await expect(headers).toHaveCount(4)
+    await expect(headers).toHaveCount(5)
     await expect(page.getByRole('button', { name: 'Todo', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Done', exact: true })).toBeVisible()
     await card.locator('[data-worktree-card-surface]').hover()

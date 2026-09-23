@@ -91,7 +91,11 @@ state. Both levels collapse independently. Renaming or deleting a shared group a
 
 Status now shows every configured status, including empty drop targets. Workspace Status is
 manually assigned and defaults to In progress—it is not the same as GitHub PR state. Use PR
-grouping for review-derived sections.
+grouping for review-derived sections. The built-in workflow is **Todo → In progress → Blocked →
+In review → Done**. Blocked is a native status, not a custom group, and is also available on the
+workspace board. Existing profiles receive it once on the next app start without resetting
+other status labels or order. This saved-profile migration needs a Dev restart when convenient;
+renderer hot reload alone does not restart the backend.
 
 Once groups exist, the **Create worktree** dialog includes a **Custom group** picker below the
 name/source field, for both manual and PR-based creation. It defaults to Ungrouped. The selected
