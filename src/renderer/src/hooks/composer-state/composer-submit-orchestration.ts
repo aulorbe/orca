@@ -16,9 +16,11 @@ import { useQuickSubmitAction } from './quick-submit-action'
 export function useComposerSubmitOrchestration(
   target: ComposerTargetState,
   external: ComposerExternalSyncState,
-  source: ComposerSourceState
+  source: ComposerSourceState,
+  customGroupId: string | null = null
 ): ComposerSubmitState {
   const folderSubmitOrchestration = useFolderSubmitOrchestration({
+    customGroupId,
     clearNewWorkspaceDraft: target.composerTargetStore.clearNewWorkspaceDraft,
     createFolderWorkspace: target.composerTargetStore.createFolderWorkspace,
     decisions: target.composerTargetStore.decisions,
@@ -88,6 +90,7 @@ export function useComposerSubmitOrchestration(
     tuiAgent: target.workspaceIdentityState.tuiAgent
   })
   const fullCreationExecution = useFullCreationExecution({
+    customGroupId,
     applyWorktreeMeta: source.composerNavigationActions.applyWorktreeMeta,
     clearNewWorkspaceDraft: target.composerTargetStore.clearNewWorkspaceDraft,
     createWorktree: target.composerTargetStore.createWorktree,
@@ -189,6 +192,7 @@ export function useComposerSubmitOrchestration(
     smartNameMode: target.workspaceIdentityState.smartNameMode
   })
   const quickCreationExecution = useQuickCreationExecution({
+    customGroupId,
     clearNewWorkspaceDraft: target.composerTargetStore.clearNewWorkspaceDraft,
     createMultiple: target.asyncComposerState.createMultiple,
     effectivePresetId: target.derivedComposerState.effectivePresetId,

@@ -1,4 +1,5 @@
-import type { RefObject } from 'react'
+import { useState, type RefObject } from 'react'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import {
   getLinkedWorkItemSuggestedName,
   getLinkedWorkItemWorkspaceName,
@@ -50,7 +51,11 @@ export type UseComposerStateOptions = {
   createGateMode?: 'full' | 'quick'
 }
 
-export type ComposerCardProps = ComposerCardSourceProps & ComposerCardActionProps
+export type ComposerCardProps = ComposerCardSourceProps &
+  ComposerCardActionProps & {
+    customGroupId: string | null
+    onCustomGroupChange: (groupId: string | null) => void
+  }
 
 export type UseComposerStateResult = {
   cardProps: ComposerCardProps
@@ -207,13 +212,22 @@ const COMPOSER_DECISIONS: ComposerDecisions = {
 }
 
 export function useComposerState(options: UseComposerStateOptions): UseComposerStateResult {
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const groups = useCustomWorkspaceGroups((state) => state.data.groups)
+  const customGroupId = groups.some((group) => group.id === selectedGroupId)
+    ? selectedGroupId
+    : null
   const target = useComposerTargetState(options, COMPOSER_DECISIONS)
   const external = useComposerExternalSync(target)
   const source = useComposerSourceState(target, external)
-  const submit = useComposerSubmitOrchestration(target, external, source)
+  const submit = useComposerSubmitOrchestration(target, external, source, customGroupId)
   const model = assembleComposerModel(target, external, source, submit)
   const builtCard = buildComposerCardProps(model)
-  const cardProps: ComposerCardProps = builtCard.cardProps
+  const cardProps: ComposerCardProps = {
+    ...builtCard.cardProps,
+    customGroupId,
+    onCustomGroupChange: setSelectedGroupId
+  }
   const { createDisabled } = builtCard
   return {
     cardProps,

@@ -93,6 +93,12 @@ Status now shows every configured status, including empty drop targets. Workspac
 manually assigned and defaults to In progress—it is not the same as GitHub PR state. Use PR
 grouping for review-derived sections.
 
+Once groups exist, the **Create worktree** dialog includes a **Custom group** picker below the
+name/source field, for both manual and PR-based creation. It defaults to Ungrouped. The selected
+group is applied to the newly created workspace, and is retained for background retries and
+sequential **Create more** submissions. If the group is deleted while creation is running, the
+workspace is still created and remains ungrouped.
+
 Drag cards between custom group headers (including **Ungrouped**), or choose **Custom group** in
 a card's hover details. Each card belongs to one group. Double-click a custom group title to rename
 it, or right-click its title and choose **Edit**; Ungrouped is fixed.

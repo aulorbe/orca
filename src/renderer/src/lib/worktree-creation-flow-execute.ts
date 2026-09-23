@@ -1,4 +1,5 @@
 import { toast } from 'sonner'
+import { assignCreatedWorkspaceToGroup } from './created-workspace-custom-group'
 import { useAppStore } from '@/store'
 import { preflightAgentTrust } from '@/lib/agent-trust-preflight'
 import { activateAndRevealWorktree, type ActivateAndRevealResult } from '@/lib/worktree-activation'
@@ -134,6 +135,7 @@ export async function executeWorktreeCreation(
     }
     return
   }
+  assignCreatedWorkspaceToGroup(worktree, preparedRequest.customGroupId)
   await attachEphemeralVmRuntimeToWorkspace(preparedRequest, worktree.id)
 
   const backendSpawned = result.startupTerminal?.spawned === true

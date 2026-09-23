@@ -10,6 +10,7 @@ const store = {
   },
   pendingWorktreeCreations: {} as Record<string, PendingWorktreeCreation>,
   beginPendingWorktreeCreation: vi.fn(),
+  updatePendingWorktreeCreation: vi.fn(),
   setActivePendingWorktreeCreation: vi.fn(),
   setActiveView: vi.fn(),
   setSidebarOpen: vi.fn(),
@@ -50,7 +51,14 @@ vi.mock('@/lib/ephemeral-vm-workspace-target', () => ({
   prepareEphemeralVmWorkspaceTarget: vi.fn()
 }))
 
-import { runBackgroundWorktreeCreation } from './worktree-creation-flow'
+vi.mock('./worktree-creation-flow-execute', () => ({
+  executeWorktreeCreation: vi.fn().mockResolvedValue(undefined)
+}))
+import { executeWorktreeCreation } from './worktree-creation-flow-execute'
+import {
+  runBackgroundWorktreeCreation,
+  retryBackgroundWorktreeCreation
+} from './worktree-creation-flow'
 
 function makeRequest(overrides: Partial<WorktreeCreationRequest> = {}): WorktreeCreationRequest {
   return {
@@ -83,6 +91,18 @@ describe('runBackgroundWorktreeCreation linked-item dedupe', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     store.pendingWorktreeCreations = {}
+  })
+
+  it('retains the selected custom group after the composer closes and when retrying', () => {
+    const request = makeRequest({ customGroupId: 'front', linkedPR: 42 })
+    store.beginPendingWorktreeCreation.mockImplementationOnce((entry: PendingWorktreeCreation) => {
+      store.pendingWorktreeCreations[entry.creationId] = entry
+    })
+    const id = runBackgroundWorktreeCreation(request)
+    expect(store.pendingWorktreeCreations[id]?.request.customGroupId).toBe('front')
+    retryBackgroundWorktreeCreation(id)
+    expect(executeWorktreeCreation).toHaveBeenNthCalledWith(1, id, request)
+    expect(executeWorktreeCreation).toHaveBeenNthCalledWith(2, id, request)
   })
 
   it('reveals an existing linked-item creation instead of starting a duplicate', () => {

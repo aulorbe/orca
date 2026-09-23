@@ -26,6 +26,7 @@ import type { TuiAgent } from '../../../shared/tui-agent'
 import { NewWorkspaceComposerAdvancedSection } from './new-workspace/NewWorkspaceComposerAdvancedSection'
 import { NewWorkspaceComposerAgentSection } from './new-workspace/NewWorkspaceComposerAgentSection'
 import { NewWorkspaceComposerFooter } from './new-workspace/NewWorkspaceComposerFooter'
+import { ComposerCustomGroupPicker } from './new-workspace/ComposerCustomGroupPicker'
 import { NewWorkspaceComposerNameSection } from './new-workspace/NewWorkspaceComposerNameSection'
 import { NewWorkspaceComposerProjectSection } from './new-workspace/NewWorkspaceComposerProjectSection'
 import {
@@ -316,6 +317,13 @@ export default function NewWorkspaceComposerCard(
           selectedProjectName={selectedProjectName}
         />
         <NewWorkspaceComposerNameSection {...props} onNamePlainEnter={handleNamePlainEnter} />
+        {props.onCustomGroupChange && (
+          <ComposerCustomGroupPicker
+            value={props.customGroupId ?? null}
+            onChange={props.onCustomGroupChange}
+            disabled={props.creating}
+          />
+        )}
         <NewWorkspaceComposerAgentSection
           {...props}
           visibleQuickAgents={visibleQuickAgents}

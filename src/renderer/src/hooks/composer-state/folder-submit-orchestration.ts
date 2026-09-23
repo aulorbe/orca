@@ -28,6 +28,8 @@ type FolderSubmitOrchestrationInput = Pick<
 >
 
 import { useCallback } from 'react'
+import { assignCreatedWorkspaceToGroup } from '@/lib/created-workspace-custom-group'
+import { folderWorkspaceToWorktree } from '../../../../shared/folder-workspace-worktree'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import { settleComposerSubmit } from '@/lib/composer-submit-cancellation'
 import { isTuiAgentEnabled } from '../../../../shared/tui-agent-selection'
@@ -48,9 +50,12 @@ import {
 } from '@/lib/workspace-create-error-format'
 import { toast } from 'sonner'
 
-export function useFolderSubmitOrchestration(input: FolderSubmitOrchestrationInput) {
+export function useFolderSubmitOrchestration(
+  input: FolderSubmitOrchestrationInput & { customGroupId?: string | null }
+) {
   const {
     clearNewWorkspaceDraft,
+    customGroupId,
     createFolderWorkspace,
     decisions,
     disabledTuiAgents,
@@ -146,10 +151,15 @@ export function useFolderSubmitOrchestration(input: FolderSubmitOrchestrationInp
           isRemote: folderTargetIsRemote,
           launchSource: telemetrySource === 'onboarding' ? 'onboarding' : 'new_workspace_composer',
           runtimeEnvironmentId: folderTargetRuntimeEnvironmentId,
-          createFolderWorkspace: (input) =>
-            createFolderWorkspace(input, {
+          createFolderWorkspace: async (input) => {
+            const workspace = await createFolderWorkspace(input, {
               runtimeEnvironmentId: folderTargetRuntimeEnvironmentId
-            }),
+            })
+            if (workspace) {
+              assignCreatedWorkspaceToGroup(folderWorkspaceToWorktree(workspace), customGroupId)
+            }
+            return workspace
+          },
           onOpenChange: (open) => {
             if (!open) {
               if (persistDraft) {
@@ -184,6 +194,7 @@ export function useFolderSubmitOrchestration(input: FolderSubmitOrchestrationInp
     },
     [
       clearNewWorkspaceDraft,
+      customGroupId,
       createFolderWorkspace,
       canResolveFolderSmartGitHubSubmit,
       disabledTuiAgents,

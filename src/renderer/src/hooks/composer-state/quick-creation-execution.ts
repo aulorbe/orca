@@ -48,9 +48,12 @@ import { buildQuickCreationRequest } from './quick-creation-request'
 import type { PendingSmartGitHubSubmitResolution } from './source-selection-decisions'
 import { planAgentSessionLaunch } from '@/lib/agent-session-launch-plan'
 
-export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
+export function useQuickCreationExecution(
+  input: QuickCreationExecutionInput & { customGroupId?: string | null }
+) {
   const {
     clearNewWorkspaceDraft,
+    customGroupId,
     createMultiple,
     effectivePresetId,
     ephemeralVmRecipes,
@@ -267,7 +270,7 @@ export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
         clearNewWorkspaceDraft()
       }
 
-      runBackgroundWorktreeCreation(request)
+      runBackgroundWorktreeCreation({ ...request, ...(customGroupId ? { customGroupId } : {}) })
 
       if (createMultiple) {
         resetForNextCreate()
@@ -277,6 +280,7 @@ export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
     },
     [
       clearNewWorkspaceDraft,
+      customGroupId,
       createMultiple,
       effectivePresetId,
       ephemeralVmRecipes,

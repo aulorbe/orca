@@ -27,6 +27,7 @@ export type FullCreationExecutionInput = Pick<
 >
 
 import { useCallback } from 'react'
+import { assignCreatedWorkspaceToGroup } from '@/lib/created-workspace-custom-group'
 import type { PendingSmartGitHubSubmitResolution } from './source-selection-decisions'
 import { translate } from '@/i18n/i18n'
 import { settleComposerSubmit } from '@/lib/composer-submit-cancellation'
@@ -43,9 +44,12 @@ import { finalizeFullCreation } from './full-creation-finalization'
 import { buildFullCreationIssueCommand } from './full-creation-issue-command'
 import { buildFullCreationStartup } from './full-creation-startup'
 
-export function useFullCreationExecution(input: FullCreationExecutionInput) {
+export function useFullCreationExecution(
+  input: FullCreationExecutionInput & { customGroupId?: string | null }
+) {
   const {
     applyWorktreeMeta,
+    customGroupId,
     clearNewWorkspaceDraft,
     createWorktree,
     effectivePresetId,
@@ -189,6 +193,7 @@ export function useFullCreationExecution(input: FullCreationExecutionInput) {
       )
 
       const worktree = result.worktree
+      assignCreatedWorkspaceToGroup(worktree, customGroupId)
       const issueCommand = buildFullCreationIssueCommand({
         shouldRun: submitShouldRunIssueAutomation && issueCommandTrustDecision === 'run',
         template: confirmedIssueCommandTemplate,
@@ -279,6 +284,7 @@ export function useFullCreationExecution(input: FullCreationExecutionInput) {
     },
     [
       applyWorktreeMeta,
+      customGroupId,
       clearNewWorkspaceDraft,
       createWorktree,
       effectivePresetId,

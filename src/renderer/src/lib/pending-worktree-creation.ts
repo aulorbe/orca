@@ -32,6 +32,8 @@ export type WorktreeCreationProgressMode = 'stepped' | 'indeterminate'
  * (no closures/refs) so a pending entry can hold it for the panel's Retry.
  */
 export type WorktreeCreationRequest = {
+  /** Renderer-only grouping choice, retained with the request for retries. */
+  customGroupId?: string | null
   repoId: string
   /** Source host/account that produced the linked task. Kept separate from the
    *  run context so Retry does not infer provider ownership from the run host. */
