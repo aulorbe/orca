@@ -1,3 +1,5 @@
+import { customGroupChildKey } from '../../../../../../shared/custom-workspace-groups'
+import { appendCustomGroupRows } from './custom-group-rows'
 import {
   compareFolderWorkspacesForDisplay,
   type RenderableFolderWorkspace
@@ -105,11 +107,22 @@ export function appendProjectGroupSections(
       tone: PROJECT_GROUP_META.tone,
       icon: PROJECT_GROUP_META.icon,
       projectGroup,
-      projectGroupDepth: depth
+      projectGroupDepth: depth,
+      ...(ctx.customGroups
+        ? {
+            customParentGrouping: 'repo' as const,
+            customGroupDropKey: customGroupChildKey(null, key)
+          }
+        : {})
     })
     if (!collapsedGroups.has(key)) {
-      for (const pair of folderWorkspacesByProjectGroupId.get(projectGroup.id) ?? []) {
-        result.push(buildFolderWorkspaceRow(pair, depth + 1))
+      const folders = folderWorkspacesByProjectGroupId.get(projectGroup.id) ?? []
+      if (ctx.customGroups && folders.length > 0) {
+        appendCustomGroupRows(ctx, ctx.customGroups, [], folders, key, depth + 1)
+      } else {
+        for (const pair of folders) {
+          result.push(buildFolderWorkspaceRow(pair, depth + 1))
+        }
       }
       appendOrderedGroups(ctx, withRepoSectionDisplayLabels(repoEntries), depth + 1)
       for (const childGroup of childGroups) {

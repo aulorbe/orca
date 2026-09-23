@@ -2,6 +2,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import type { WorktreeGroupBy } from './worktree-list/grouping/row-types'
 import { GROUP_BY_OPTIONS } from './sidebar-workspace-option-items'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
+import { getCustomParentGroupBy } from '../../../../shared/custom-workspace-groups'
 
 const OPTIONS = [...GROUP_BY_OPTIONS, { id: 'custom' as const, label: 'Custom' }]
 
@@ -11,26 +12,21 @@ type SidebarGroupByToggleProps = {
 }
 
 export function SidebarGroupByToggle({ groupBy, setGroupBy }: SidebarGroupByToggleProps) {
-  const customEnabled = useCustomWorkspaceGroups((s) => s.data.enabled)
-  const setCustomEnabled = useCustomWorkspaceGroups((s) => s.setEnabled)
-  const byStatus = useCustomWorkspaceGroups((s) => s.data.byStatus)
-  const setByStatus = useCustomWorkspaceGroups((s) => s.setByStatus)
+  const data = useCustomWorkspaceGroups((s) => s.data)
+  const parent = getCustomParentGroupBy(data)
   const choose = (value: WorktreeGroupBy | 'custom') => {
-    if (value === 'workspace-status' && customEnabled && byStatus) {
-      return
-    }
-    if (value === 'custom') {
-      setByStatus(false)
-    }
-    setCustomEnabled(value === 'custom')
+    const groups = useCustomWorkspaceGroups.getState()
+    const keepSubgroups = groups.data.enabled && getCustomParentGroupBy(groups.data) !== null
     if (value !== 'custom') {
       setGroupBy(value)
     }
+    groups.setParentGroupBy(value === 'custom' ? null : value)
+    groups.setEnabled(value === 'custom' || keepSubgroups)
   }
   return (
     <ToggleGroup
       type="single"
-      value={customEnabled ? (byStatus ? 'workspace-status' : 'custom') : groupBy}
+      value={data.enabled ? (parent ?? 'custom') : groupBy}
       onValueChange={(value) => {
         const option = OPTIONS.find((entry) => entry.id === value)
         if (option) {

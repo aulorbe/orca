@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import type { AppState } from '@/store/types'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
 import { CustomGroupTitle } from '../../CustomGroupTitle'
-import { CustomStatusGroupActions } from '../../CustomStatusGroupActions'
+import { CustomSubgroupActions } from '../../CustomSubgroupActions'
 import { RepoForkIndicator } from '@/components/repo/repo-fork-indicator'
 import type { FolderWorkspacePathStatus } from '../../../../../../shared/folder-workspace-path-status'
 import { isConfirmedStaleFolderPathStatus } from '../../../../../../shared/folder-workspace-path-status'
@@ -141,10 +141,9 @@ export function renderWorktreeSectionHeaderRow(args: {
     headerDrag.projectGroupDrag.state.draggingGroupId !== null &&
     headerDrag.projectGroupDrag.state.draggingGroupId === projectGroupIdForHeader
   const headerWorkspaceStatus =
-    row.customParentStatus ??
-    (ctx.groupBy === 'workspace-status'
+    ctx.groupBy === 'workspace-status'
       ? getWorkspaceStatusFromGroupKey(row.key, ctx.workspaceStatuses)
-      : null)
+      : null
   const isPinnedHeader = row.key === PINNED_GROUP_KEY
   const repoHeaderColor = resolveProjectGroupHeaderColor({
     groupBy: ctx.groupBy,
@@ -177,7 +176,7 @@ export function renderWorktreeSectionHeaderRow(args: {
   const isHeaderCollapsed = ctx.collapsedGroups.has(row.key)
   // Why: repo/project/status/pinned share compact section chrome; flat "All" stays a simple label.
   const showHeaderCollapseAffordance =
-    (row.count > 0 || row.customParentStatus !== undefined) &&
+    (row.count > 0 || row.customParentGrouping !== undefined) &&
     (isRepoHeader ||
       isProjectGroupHeader ||
       headerWorkspaceStatus !== null ||
@@ -356,7 +355,9 @@ export function renderWorktreeSectionHeaderRow(args: {
         </div>
 
         <ProjectHeaderActions>
-          {headerWorkspaceStatus ? <CustomStatusGroupActions label={row.label} /> : null}
+          {!row.customGroup && !isPinnedHeader && ctx.groupBy !== 'none' ? (
+            <CustomSubgroupActions label={row.label} groupBy={ctx.groupBy} />
+          ) : null}
           {showHeaderCollapseAffordance ? (
             <div
               className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground"

@@ -1,6 +1,11 @@
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
-import { getCustomWorkspaceGroupKeys } from '../../../../../../shared/custom-workspace-groups'
+import {
+  getCustomWorkspaceGroupKeys,
+  getCustomParentGroupBy,
+  customGroupChildKey,
+  getCustomWorkspaceGroupId
+} from '../../../../../../shared/custom-workspace-groups'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { WorkspaceStatusDefinition, Worktree } from '../../../../../../shared/worktree/types'
 import { getWorkspaceStatus, getWorkspaceStatusGroupKey } from '../../workspace-status'
@@ -48,7 +53,11 @@ export function getGroupKeysForWorktree(
 ): string[] {
   const customGroups = useCustomWorkspaceGroups.getState().data
   if (customGroups.enabled) {
-    return getCustomWorkspaceGroupKeys(customGroups, worktree, workspaceStatuses)
+    const parent = getCustomParentGroupBy(customGroups)
+    if (parent === null || parent === 'none') {
+      return getCustomWorkspaceGroupKeys(customGroups, worktree, workspaceStatuses)
+    }
+    groupBy = parent
   }
   const groupKey = getGroupKeyForWorktree(
     groupBy,
@@ -62,8 +71,12 @@ export function getGroupKeysForWorktree(
   if (!groupKey) {
     return []
   }
+  const finish = (keys: string[]) =>
+    customGroups.enabled
+      ? [...keys, customGroupChildKey(getCustomWorkspaceGroupId(customGroups, worktree), groupKey)]
+      : keys
   if (groupBy !== 'repo') {
-    return [groupKey]
+    return finish([groupKey])
   }
   const repo = repoMap.get(worktree.repoId)
   const groupIds: string[] = []
@@ -82,5 +95,5 @@ export function getGroupKeysForWorktree(
     const parentId = group.parentGroupId ?? null
     currentGroupId = parentId && groupsById.has(parentId) ? parentId : null
   }
-  return [...groupIds.map((id) => getProjectGroupHeaderKey(id)), groupKey]
+  return finish([...groupIds.map((id) => getProjectGroupHeaderKey(id)), groupKey])
 }

@@ -4,7 +4,7 @@ import { getAllWorktreesFromState } from '@/store/selectors'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import {
   CUSTOM_GROUP_KEY_PREFIX,
-  getCustomWorkspaceGroupKeys,
+  getCustomParentGroupBy,
   parseCustomGroupSectionKey
 } from '../../../../../../shared/custom-workspace-groups'
 import { folderWorkspaceToWorktree } from '../../../../../../shared/folder-workspace-worktree'
@@ -14,6 +14,7 @@ import type { WorkspaceCardIdentity } from '../../../../../../shared/workspace-c
 import type { Worktree } from '../../../../../../shared/worktree/types'
 import type { WorktreePointerDrag } from './row-state'
 import { getWorkspaceStatus } from '../../workspace-status'
+import { getCustomParentKey } from '../../custom-group-parent-key'
 
 const pendingMoves = new Map<string, symbol>()
 
@@ -103,10 +104,12 @@ export async function commitCustomGroupDrop(
 ): Promise<void> {
   const groups = useCustomWorkspaceGroups.getState()
   const target = parseCustomGroupSectionKey(key)
+  const parentGrouping = getCustomParentGroupBy(groups.data)
   if (
     !groups.data.enabled ||
     !target ||
-    Boolean(groups.data.byStatus) !== (target.statusId !== null)
+    (parentGrouping === 'workspace-status') !== (target.statusId !== null) ||
+    (parentGrouping === null || parentGrouping === 'none') !== (target.parentKey === null)
   ) {
     return
   }
@@ -127,6 +130,17 @@ export async function commitCustomGroupDrop(
     (target.groupId !== null && !groups.data.groups.some((group) => group.id === target.groupId))
   ) {
     toast.error('Group or status no longer exists.')
+    return
+  }
+  if (
+    (parentGrouping === 'repo' || parentGrouping === 'pr-status') &&
+    workspaces.some(
+      (workspace) => getCustomParentKey(state, workspace, parentGrouping) !== target.parentKey
+    )
+  ) {
+    toast.error(
+      'Project and PR sections are automatic. Choose a subgroup within the card’s own section.'
+    )
     return
   }
   const results = await Promise.all(
@@ -171,11 +185,7 @@ export async function commitCustomGroupDrop(
         }
         const groups = useCustomWorkspaceGroups.getState()
         groups.assignGroup(workspace, target.groupId)
-        for (const groupKey of getCustomWorkspaceGroupKeys(
-          useCustomWorkspaceGroups.getState().data,
-          current,
-          latest.workspaceStatuses
-        )) {
+        for (const groupKey of [...(target.parentKey ? [target.parentKey] : []), key]) {
           if (latest.collapsedGroups.has(groupKey)) {
             latest.toggleCollapsedGroup(groupKey)
           }

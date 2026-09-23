@@ -214,14 +214,15 @@ export function buildOrderedGroups(args: {
       }
     }
   } else if (groupBy === 'workspace-status') {
-    // Why: status grouping is opt-in while the board drawer remains the wider
-    // all-lanes drag target; keep the sidebar compact by omitting empty lanes.
+    // Empty statuses remain visible as drop targets, just like board lanes.
     for (const status of workspaceStatuses) {
       const key = getWorkspaceStatusGroupKey(status.id)
-      const group = grouped.get(key)
-      if (group) {
-        orderedGroups.push([key, group])
+      const group = grouped.get(key) ?? {
+        label: status.label,
+        items: [],
+        repoIds: new Set<string>()
       }
+      orderedGroups.push([key, group])
     }
   } else {
     for (const group of grouped.values()) {

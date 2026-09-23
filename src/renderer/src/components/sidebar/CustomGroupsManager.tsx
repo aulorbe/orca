@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { CustomGroupDeletionChoices } from './CustomGroupDeletionChoices'
 import {
   CUSTOM_GROUP_NAME_LIMIT,
+  getCustomParentGroupBy,
   type CustomWorkspaceGroup
 } from '../../../../shared/custom-workspace-groups'
 
@@ -26,7 +27,7 @@ export function CustomGroupsManager({
   onOpenChange: (open: boolean) => void
 }) {
   const groups = useCustomWorkspaceGroups((s) => s.data.groups)
-  const byStatus = useCustomWorkspaceGroups((s) => s.data.byStatus)
+  const parent = useCustomWorkspaceGroups((s) => getCustomParentGroupBy(s.data))
   const saveGroup = useCustomWorkspaceGroups((s) => s.saveGroup)
   const moveGroup = useCustomWorkspaceGroups((s) => s.moveGroup)
   const [name, setName] = useState('')
@@ -67,8 +68,8 @@ export function CustomGroupsManager({
           <DialogDescription>
             {pendingDelete
               ? 'Choose what happens to this group’s cards.'
-              : byStatus
-                ? 'Groups are shared across statuses. Each card keeps its status unless you drag it to another status.'
+              : parent !== null
+                ? 'Custom groups are shared across sections. Only Status allows moving cards between outer sections; Project and PR sections are automatic.'
                 : 'Create your own groups, then choose a group in each card’s hover details.'}
           </DialogDescription>
         </DialogHeader>

@@ -78,13 +78,20 @@ Custom's renderer storage, not synced to GitHub or other Orca installations.
 Choose **Workspace options → Group by → Custom**, then **Manage custom groups…**. There is one
 saved set of groups: add names, rename them, reorder with the arrows, or delete a group.
 
-For a two-level layout, choose **Workspace options → Group by → Status**, then enable
-**Custom subgroups**. You can also hover a status heading and click **+** to create groups.
-The same set of group names appears under each status; you do not need to create them twice.
-Dragging between groups within a status keeps the status unchanged. Dragging to a different
-status changes it too; dropping on a status heading puts the card in that status’s Ungrouped
-section. Status and subgroup sections collapse independently. Switching back to flat **Custom**
-keeps all assignments. Renaming or deleting a shared group applies across statuses.
+Choose any built-in grouping—**None, Status, PR, or Project**—then enable **Custom subgroups**.
+The option stays enabled when switching groupings. You can also use **Add custom subgroup** on
+a section heading. The same group names and assignments are shared across views; None keeps
+just the custom groups without an outer tier. Recent/Smart/Manual sorting continues to apply
+inside each group.
+
+Moving between subgroups only changes the custom group. Under Status, moving to another status
+changes it too; dropping on a status heading puts the card in that status’s Ungrouped section.
+Project and PR sections are automatic, so cards cannot be dragged into another project or PR
+state. Both levels collapse independently. Renaming or deleting a shared group applies everywhere.
+
+Status now shows every configured status, including empty drop targets. Workspace Status is
+manually assigned and defaults to In progress—it is not the same as GitHub PR state. Use PR
+grouping for review-derived sections.
 
 Drag cards between custom group headers (including **Ungrouped**), or choose **Custom group** in
 a card's hover details. Each card belongs to one group. Double-click a custom group title to rename

@@ -308,4 +308,72 @@ test.describe('Status subgroups', () => {
       .getByRole('listbox', { name: 'Worktrees', exact: true })
       .screenshot({ path: testInfo.outputPath('nested-groups-dark.png') })
   })
+
+  test('subgroups work with Project, PR, and None; plain Status keeps empty drop targets', async ({
+    orcaPage: page
+  }, testInfo) => {
+    const id = await waitForActiveWorktree(page)
+    await page.evaluate(async () => {
+      const state = window.__store!.getState()
+      state.setHideDefaultBranchWorkspace(false)
+      state.setShowSleepingWorkspaces(true)
+      await state.updateSettings({ experimentalNewWorktreeCardStyle: true })
+    })
+    const card = worktreeRow(page, id)
+    await options(page)
+    await page.getByText('Project', { exact: true }).click()
+    await page.getByRole('menuitemcheckbox', { name: 'Custom subgroups', exact: true }).click()
+    await page.getByRole('menuitem', { name: /^Manage custom groups/ }).click()
+    const dialog = page.getByRole('dialog', { name: 'Custom groups', exact: true })
+    await dialog.getByRole('textbox', { name: 'New group', exact: true }).fill('Focus')
+    await dialog.getByRole('button', { name: 'Add group', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+    await dragCard(page, id, 'Focus')
+    const projectKey = await card.getAttribute('data-worktree-section-key')
+    expect(projectKey).toMatch(/^custom-group:within\//)
+    const groupId = projectKey?.split('/').at(-1)
+    await page
+      .getByRole('listbox', { name: 'Worktrees', exact: true })
+      .screenshot({ path: testInfo.outputPath('project-subgroups.png') })
+
+    for (const mode of ['PR', 'None']) {
+      await options(page)
+      await page.getByText(mode, { exact: true }).click()
+      await expect(
+        page.getByRole('menuitemcheckbox', { name: 'Custom subgroups', exact: true })
+      ).toBeChecked()
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('menu')).toHaveCount(0)
+      await expect(card).toHaveAttribute(
+        'data-worktree-section-key',
+        mode === 'None'
+          ? `custom-group:${groupId}`
+          : new RegExp(`^custom-group:within/pr%3A[^/]+/${groupId}$`)
+      )
+      await page
+        .getByRole('listbox', { name: 'Worktrees', exact: true })
+        .screenshot({ path: testInfo.outputPath(`${mode}-subgroups.png`) })
+    }
+    await page.reload()
+    await waitForActiveWorktree(page)
+    await expect(card).toHaveAttribute('data-worktree-section-key', `custom-group:${groupId}`)
+    await options(page)
+    await page.getByText('Status', { exact: true }).click()
+    await page.getByRole('menuitemcheckbox', { name: 'Custom subgroups', exact: true }).click()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('menu')).toHaveCount(0)
+    const headers = page.locator('[role="button"][data-workspace-status-drop-target]')
+    await expect(headers).toHaveCount(4)
+    await expect(page.getByRole('button', { name: 'Todo', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Done', exact: true })).toBeVisible()
+    await card.locator('[data-worktree-card-surface]').hover()
+    await page.mouse.down()
+    try {
+      await page.getByRole('button', { name: 'In review', exact: true }).hover()
+      await expect(page.locator('[data-worktree-sidebar-drag-preview="true"]')).toHaveCount(1)
+    } finally {
+      await page.mouse.up()
+    }
+    await expect(card).toHaveAttribute('data-worktree-section-key', 'workspace-status:in-review')
+  })
 })

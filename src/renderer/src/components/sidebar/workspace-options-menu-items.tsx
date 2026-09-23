@@ -1,6 +1,7 @@
 import { useMemo, type JSX } from 'react'
 import { useAppStore } from '@/store'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
+import { getCustomParentGroupBy } from '../../../../shared/custom-workspace-groups'
 import { useWorkspaceTagsStore } from '@/store/workspace-tags'
 import {
   DropdownMenuLabel,
@@ -99,7 +100,7 @@ export function WorkspaceOptionsMenuItems({
   onManageCustomGroups?: () => void
 }): JSX.Element {
   const customEnabled = useCustomWorkspaceGroups((s) => s.data.enabled)
-  const byStatus = useCustomWorkspaceGroups((s) => s.data.byStatus)
+  const parent = useCustomWorkspaceGroups((s) => getCustomParentGroupBy(s.data))
   const repos = useAppStore((s) => s.repos)
   const setWorkspaceHostScope = useAppStore((s) => s.setWorkspaceHostScope)
   const visibleWorkspaceHostIds = useAppStore((s) => s.visibleWorkspaceHostIds)
@@ -154,14 +155,15 @@ export function WorkspaceOptionsMenuItems({
       <div className="px-2 pt-0.5 pb-1">
         <SidebarGroupByToggle groupBy={groupBy} setGroupBy={setGroupBy} />
       </div>
-      {((groupBy === 'workspace-status' && !customEnabled) || (customEnabled && byStatus)) && (
+      {(!customEnabled || parent !== null) && (
         <DropdownMenuCheckboxItem
-          checked={customEnabled && byStatus === true}
+          checked={customEnabled && parent !== null}
           onSelect={(event) => event.preventDefault()}
           onCheckedChange={(checked) => {
-            setGroupBy('workspace-status')
+            const selectedGroupBy = customEnabled ? (parent ?? groupBy) : groupBy
+            setGroupBy(selectedGroupBy)
             const groups = useCustomWorkspaceGroups.getState()
-            groups.setByStatus(checked)
+            groups.setParentGroupBy(selectedGroupBy)
             groups.setEnabled(checked)
           }}
         >

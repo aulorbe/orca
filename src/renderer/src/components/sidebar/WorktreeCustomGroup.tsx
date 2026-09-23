@@ -12,9 +12,9 @@ import {
 } from '@/components/ui/select'
 import {
   getCustomWorkspaceGroupId,
-  getCustomWorkspaceGroupKeys,
   UNGROUPED_CUSTOM_GROUP_ID
 } from '../../../../shared/custom-workspace-groups'
+import { getCustomWorkspaceRevealKeys } from './custom-group-parent-key'
 import type { WorkspaceCardIdentity } from '../../../../shared/workspace-card-identity'
 
 export function WorktreeCustomGroup({
@@ -41,8 +41,8 @@ export function WorktreeCustomGroup({
             assignGroup(worktree, value === UNGROUPED_CUSTOM_GROUP_ID ? null : value)
             const groups = useCustomWorkspaceGroups.getState().data
             const ui = useAppStore.getState()
-            const current = ui.getKnownWorktreeById(worktree.id, worktree.hostId) ?? worktree
-            for (const key of getCustomWorkspaceGroupKeys(groups, current, ui.workspaceStatuses)) {
+            const current = ui.getKnownWorktreeById(worktree.id, worktree.hostId)
+            for (const key of current ? getCustomWorkspaceRevealKeys(ui, current) : []) {
               if (groups.enabled && ui.collapsedGroups.has(key)) {
                 ui.toggleCollapsedGroup(key)
               }

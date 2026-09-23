@@ -20,6 +20,7 @@ type CustomGroupsState = {
   setManagerOpen: (open: boolean) => void
   setEnabled: (enabled: boolean) => void
   setByStatus: (byStatus: boolean) => void
+  setParentGroupBy: (parentGroupBy: CustomWorkspaceGroups['parentGroupBy']) => void
   saveGroup: (group: CustomWorkspaceGroup) => void
   deleteGroup: (id: string, destination?: string | null) => void
   clearDeletedAssignments: (groupId: string, workspaces: readonly WorkspaceCardIdentity[]) => void
@@ -35,7 +36,14 @@ export const useCustomWorkspaceGroups = create<CustomGroupsState>()(
       managerOpen: false,
       setManagerOpen: (managerOpen) => set({ managerOpen }),
       setEnabled: (enabled) => set(({ data }) => ({ data: { ...data, enabled } })),
-      setByStatus: (byStatus) => set(({ data }) => ({ data: { ...data, byStatus } })),
+      setByStatus: (byStatus) =>
+        set(({ data }) => ({
+          data: { ...data, byStatus, parentGroupBy: byStatus ? 'workspace-status' : null }
+        })),
+      setParentGroupBy: (parentGroupBy) =>
+        set(({ data }) => ({
+          data: { ...data, parentGroupBy, byStatus: parentGroupBy === 'workspace-status' }
+        })),
       saveGroup: (group) => set(({ data }) => ({ data: saveCustomWorkspaceGroup(data, group) })),
       deleteGroup: (id, destination = null) =>
         set(({ data }) => ({ data: deleteCustomWorkspaceGroup(data, id, destination) })),

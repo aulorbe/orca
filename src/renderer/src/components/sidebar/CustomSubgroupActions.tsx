@@ -1,10 +1,18 @@
-import { Plus } from 'lucide-react'
+import { FolderPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import { stopRepoHeaderKeyboardToggle } from './worktree-list/rows/header-event-guards'
 
-export function CustomStatusGroupActions({ label }: { label: string }) {
+import type { WorktreeGroupBy } from './worktree-list/grouping/row-types'
+
+export function CustomSubgroupActions({
+  label,
+  groupBy
+}: {
+  label: string
+  groupBy: WorktreeGroupBy
+}) {
   return (
     <div onClick={(event) => event.stopPropagation()} onKeyDown={stopRepoHeaderKeyboardToggle}>
       <Tooltip>
@@ -15,12 +23,12 @@ export function CustomStatusGroupActions({ label }: { label: string }) {
             aria-label={`Add custom subgroup under ${label}`}
             onClick={() => {
               const groups = useCustomWorkspaceGroups.getState()
-              groups.setByStatus(true)
+              groups.setParentGroupBy(groupBy)
               groups.setEnabled(true)
               groups.setManagerOpen(true)
             }}
           >
-            <Plus />
+            <FolderPlus />
           </Button>
         </TooltipTrigger>
         <TooltipContent>Add custom subgroup</TooltipContent>

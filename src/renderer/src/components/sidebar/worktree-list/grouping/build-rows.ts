@@ -44,8 +44,11 @@ import type {
 } from './row-types'
 import { getRenderedNaturalAnchorRepoIds, withRepoSectionDisplayLabels } from './section-order'
 import { buildOrderedGroups } from './worktree-grouping'
-import { appendCustomGroupLayout } from './status-custom-group-rows'
-import type { CustomWorkspaceGroups } from '../../../../../../shared/custom-workspace-groups'
+import { appendCustomGroupRows } from './custom-group-rows'
+import {
+  getCustomParentGroupBy,
+  type CustomWorkspaceGroups
+} from '../../../../../../shared/custom-workspace-groups'
 
 export function buildRows(
   groupBy: WorktreeGroupBy,
@@ -76,7 +79,7 @@ export function buildRows(
   customGroups?: CustomWorkspaceGroups
 ): Row[] {
   if (customGroups?.enabled) {
-    groupBy = 'none'
+    groupBy = getCustomParentGroupBy(customGroups) ?? 'none'
   }
   const result: Row[] = []
   const projectIndex = buildProjectGroupingIndex(projectGrouping)
@@ -157,8 +160,8 @@ export function buildRows(
     noticeHostContextLabelByRepoId,
     mixedWorktreeHostContextLabels
   )
-  if (customGroups?.enabled) {
-    appendCustomGroupLayout(
+  if (customGroups?.enabled && groupBy === 'none') {
+    appendCustomGroupRows(
       {
         result,
         repoMap,
@@ -172,8 +175,7 @@ export function buildRows(
       },
       customGroups,
       naturalWorktrees,
-      renderableFolderWorkspaces,
-      workspaceStatuses
+      renderableFolderWorkspaces
     )
     return result
   }
@@ -239,6 +241,7 @@ export function buildRows(
   })
 
   const sectionContext: SectionAppendContext = {
+    customGroups: customGroups?.enabled ? customGroups : undefined,
     result,
     groupBy,
     collapsedGroups,

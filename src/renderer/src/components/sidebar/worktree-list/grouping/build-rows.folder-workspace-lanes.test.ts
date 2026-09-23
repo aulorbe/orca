@@ -102,7 +102,9 @@ describe('a folder workspace can be the only member of a lane', () => {
   it('creates its status lane with no worktrees present', () => {
     const rows = buildSidebarRows({ groupBy: 'workspace-status', worktrees: [] })
     expect(folderRows(rows)).toHaveLength(1)
-    const header = rows.find((row) => row.type === 'header')
+    const header = rows.find(
+      (row) => row.type === 'header' && row.key === 'workspace-status:in-progress'
+    )
     expect(header).toBeDefined()
     expect(header && 'count' in header ? header.count : null).toBe(1)
   })
@@ -205,7 +207,9 @@ describe('host bookkeeping for lanes containing folder workspaces', () => {
       undefined,
       [makeFolderWorkspace()]
     )
-    const header = rows.find((row) => row.type === 'header')
+    const header = rows.find(
+      (row) => row.type === 'header' && row.key === 'workspace-status:in-progress'
+    )
     expect(header).toBeDefined()
     const counts = header && 'hostWorktreeCounts' in header ? header.hostWorktreeCounts : undefined
     // Undefined counts render globally, which is exactly the pre-fix bug.
@@ -236,7 +240,9 @@ describe('host bookkeeping for lanes containing folder workspaces', () => {
       undefined,
       [makeFolderWorkspace()]
     )
-    const header = rows.find((row) => row.type === 'header')
+    const header = rows.find(
+      (row) => row.type === 'header' && row.key === 'workspace-status:in-progress'
+    )
     const ids = header && 'hostWorktreeIds' in header ? header.hostWorktreeIds : undefined
     // The key must exist even though folder workspaces contribute no worktree
     // ids, or the host-section fallback leaks the global id list into it.

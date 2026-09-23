@@ -1,6 +1,10 @@
 import type { FolderWorkspace } from '../../../../../../shared/folder-workspace-types'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
-import { getCustomWorkspaceGroupKeys } from '../../../../../../shared/custom-workspace-groups'
+import {
+  customGroupChildKey,
+  getCustomWorkspaceGroupId,
+  getCustomParentGroupBy
+} from '../../../../../../shared/custom-workspace-groups'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { WorkspaceStatusDefinition, Worktree } from '../../../../../../shared/worktree/types'
 import { folderWorkspaceToWorktree } from '../../../../../../shared/folder-workspace-worktree'
@@ -74,6 +78,10 @@ export function getFolderWorkspaceRevealGroupKeys(
     return []
   }
 
+  const customGroups = useCustomWorkspaceGroups.getState().data
+  const groupBy = customGroups.enabled
+    ? (getCustomParentGroupBy(customGroups) ?? 'none')
+    : options?.groupBy
   const groupsById = new Map(projectGroups.map((group) => [group.id, group]))
   const keys: string[] = []
   const seen = new Set<string>()
@@ -92,29 +100,31 @@ export function getFolderWorkspaceRevealGroupKeys(
   // lane and host headers are the ones actually hiding the row (#15362). Lane
   // keys come from the same function grouping uses, so the two cannot disagree.
   const owningGroup = groupsById.get(folderWorkspace.projectGroupId)
-  if (options?.groupBy && options.groupBy !== 'repo' && owningGroup) {
-    keys.push(
-      getFolderWorkspaceLaneKey(
-        { folderWorkspace, projectGroup: owningGroup },
-        options.groupBy,
-        options.workspaceStatuses ?? []
-      )
+  let parentKey = keys.at(-1) ?? null
+  if (groupBy && groupBy !== 'repo' && owningGroup) {
+    parentKey = getFolderWorkspaceLaneKey(
+      { folderWorkspace, projectGroup: owningGroup },
+      groupBy,
+      options?.workspaceStatuses ?? []
     )
+    keys.push(parentKey)
   }
   if (owningGroup && options?.defaultHostId) {
     keys.push(
       `host:${getFolderWorkspaceHostId(folderWorkspace, owningGroup, options.defaultHostId)}`
     )
   }
-  const customGroups = useCustomWorkspaceGroups.getState().data
-  return customGroups.enabled
-    ? [
-        ...getCustomWorkspaceGroupKeys(
-          customGroups,
-          folderWorkspaceToWorktree(folderWorkspace),
-          options?.workspaceStatuses
-        ),
-        ...keys.filter((key) => key.startsWith('host:'))
-      ]
-    : keys
+  if (!customGroups.enabled) {
+    return keys
+  }
+  const nested = groupBy !== 'none'
+  return [
+    ...keys.filter(
+      (key) => key.startsWith('host:') || (nested && (groupBy === 'repo' || key === parentKey))
+    ),
+    customGroupChildKey(
+      getCustomWorkspaceGroupId(customGroups, folderWorkspaceToWorktree(folderWorkspace)),
+      nested ? parentKey : null
+    )
+  ]
 }

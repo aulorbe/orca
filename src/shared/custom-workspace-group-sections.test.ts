@@ -1,6 +1,8 @@
 import { expect, it } from 'vitest'
 import {
   customGroupSectionKey,
+  customGroupChildKey,
+  getCustomParentGroupBy,
   parseCustomGroupSectionKey,
   getCustomWorkspaceGroupKeys,
   normalizeCustomWorkspaceGroups,
@@ -13,12 +15,35 @@ it('round-trips flat and nested keys without confusing status and group identifi
     for (const statusId of [null, 'in-progress', 'custom/status:%']) {
       expect(parseCustomGroupSectionKey(customGroupSectionKey(groupId, statusId))).toEqual({
         groupId,
-        statusId
+        statusId,
+        parentKey: statusId === null ? null : `workspace-status:${encodeURIComponent(statusId)}`
       })
     }
   }
   expect(parseCustomGroupSectionKey('repo:one')).toBeNull()
   expect(parseCustomGroupSectionKey('custom-group:status/%bad/front')).toBeNull()
+})
+
+it('round-trips project and PR parent keys and migrates the previous status preference', () => {
+  for (const parentKey of ['repo:a/b:%', 'project:remote-box', 'pr:open']) {
+    expect(parseCustomGroupSectionKey(customGroupChildKey('front', parentKey))).toEqual({
+      groupId: 'front',
+      parentKey,
+      statusId: null
+    })
+  }
+  expect(getCustomParentGroupBy({ ...EMPTY_CUSTOM_WORKSPACE_GROUPS, byStatus: true })).toBe(
+    'workspace-status'
+  )
+  expect(
+    getCustomParentGroupBy(
+      normalizeCustomWorkspaceGroups({
+        ...EMPTY_CUSTOM_WORKSPACE_GROUPS,
+        byStatus: true,
+        parentGroupBy: 'repo'
+      })
+    )
+  ).toBe('repo')
 })
 
 it('preserves existing flat data and persists the opt-in status layout', () => {

@@ -1,6 +1,6 @@
 import { folderWorkspaceToWorktree } from '../../../../../../shared/folder-workspace-worktree'
 import {
-  customGroupSectionKey,
+  customGroupChildKey,
   getCustomWorkspaceGroupId,
   UNGROUPED_CUSTOM_GROUP_ID,
   type CustomWorkspaceGroups
@@ -34,7 +34,8 @@ export function appendCustomGroupRows(
   data: CustomWorkspaceGroups,
   worktrees: Worktree[],
   folders: readonly RenderableFolderWorkspace[],
-  statusId: string | null = null
+  parentKey: string | null = null,
+  groupDepth = parentKey === null ? 0 : 1
 ): void {
   const buckets = new Map<string, Bucket>(
     data.groups.map((group) => [group.id, { name: group.name, items: [], folders: [] }])
@@ -53,8 +54,7 @@ export function appendCustomGroupRows(
   }
   for (const [id, bucket] of buckets) {
     const count = bucket.items.length + bucket.folders.length
-    const key = customGroupSectionKey(id, statusId)
-    const groupDepth = statusId === null ? 0 : 1
+    const key = customGroupChildKey(id, parentKey)
     ctx.result.push({
       type: 'header',
       key,

@@ -5,6 +5,7 @@ import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import {
   EMPTY_CUSTOM_WORKSPACE_GROUPS,
   customGroupSectionKey,
+  customGroupChildKey,
   getCustomWorkspaceGroupId
 } from '../../../../../../shared/custom-workspace-groups'
 import { cloneDefaultWorkspaceStatuses } from '../../../../../../shared/workspace-statuses'
@@ -14,6 +15,10 @@ import { worktree } from '../../worktree-list-groups-test-fixtures'
 const mocks = vi.hoisted(() => ({ getState: vi.fn(), error: vi.fn() }))
 vi.mock('@/store', () => ({ useAppStore: { getState: mocks.getState } }))
 vi.mock('sonner', () => ({ toast: { error: mocks.error } }))
+vi.mock('../../custom-group-parent-key', () => ({
+  getCustomParentKey: (_state: unknown, workspace: Worktree, groupBy: string) =>
+    groupBy === 'repo' ? `repo:${workspace.repoId}` : 'pr:none'
+}))
 import { commitCustomGroupDrop } from './custom-group-drop'
 
 let cards: Worktree[]
@@ -75,6 +80,25 @@ it('changes only membership within a status, but persists the new status when cr
   expect(toggle).toHaveBeenCalledWith('workspace-status:in-review')
   expect(toggle).toHaveBeenCalledWith('custom-group:status/in-review/front')
 })
+
+it.each(['repo', 'pr-status'] as const)(
+  'does not mutate %s parents when moving custom groups',
+  async (parentGroupBy) => {
+    const card = cards[0]!
+    useCustomWorkspaceGroups.getState().setParentGroupBy(parentGroupBy)
+    const parent = parentGroupBy === 'repo' ? `repo:${card.repoId}` : 'pr:none'
+    await commitCustomGroupDrop({ draggedWorkspaces: [card] }, customGroupChildKey('front', parent))
+    expect(getCustomWorkspaceGroupId(useCustomWorkspaceGroups.getState().data, card)).toBe('front')
+    expect(update).not.toHaveBeenCalled()
+    await commitCustomGroupDrop(
+      { draggedWorkspaces: [card] },
+      customGroupChildKey('infra', parentGroupBy === 'repo' ? 'repo:another' : 'pr:merged')
+    )
+    expect(getCustomWorkspaceGroupId(useCustomWorkspaceGroups.getState().data, card)).toBe('front')
+    expect(update).not.toHaveBeenCalled()
+    expect(mocks.error).toHaveBeenCalled()
+  }
+)
 
 it('keeps failed moves in their previous group and reports the error', async () => {
   const card = cards[0]!

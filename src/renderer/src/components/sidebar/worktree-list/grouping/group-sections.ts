@@ -1,3 +1,8 @@
+import {
+  customGroupChildKey,
+  type CustomWorkspaceGroups
+} from '../../../../../../shared/custom-workspace-groups'
+import { appendCustomGroupRows } from './custom-group-rows'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { WorktreeLineage } from '../../../../../../shared/worktree/lineage-types'
 import type { WorkspaceStatusDefinition, Worktree } from '../../../../../../shared/worktree/types'
@@ -33,6 +38,7 @@ import { orderMainWorktreeFirst } from './section-order'
 
 /** Everything section emission reads that stays fixed for one buildRows call. */
 export type SectionAppendContext = {
+  customGroups?: CustomWorkspaceGroups
   result: Row[]
   groupBy: WorktreeGroupBy
   collapsedGroups: Set<string>
@@ -147,7 +153,15 @@ export function appendOrderedGroups(
               }
             })()
 
-    result.push(header)
+    result.push({
+      ...header,
+      ...(ctx.customGroups
+        ? {
+            customParentGrouping: groupBy,
+            customGroupDropKey: customGroupChildKey(null, key)
+          }
+        : {})
+    })
     if (!isCollapsed) {
       if (groupBy === 'repo') {
         const repoIds =
@@ -201,6 +215,10 @@ export function appendOrderedGroups(
       // host labels, which are keyed by host-qualified identity.
       const hostContextLabelByWorktreeIdentity =
         groupBy === 'repo' && hostContextLabelByRepoId ? undefined : mixedWorktreeHostContextLabels
+      if (ctx.customGroups) {
+        appendCustomGroupRows(ctx, ctx.customGroups, items, folderPairs, key, projectGroupDepth + 1)
+        continue
+      }
       appendWorktreeRows(result, items, repoMap, lineageById, worktreeMap, {
         nestLineage,
         collapsedGroups,

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { buildRows } from './build-rows'
 import { PINNED_GROUP_KEY } from './group-keys'
+import { getGroupKeyForWorktree } from './worktree-group-keys'
 import { repoMap, worktree } from '../../worktree-list-groups-test-fixtures'
 import {
   assignCustomWorkspaceGroup,
+  customGroupChildKey,
   type CustomWorkspaceGroups
 } from '../../../../../../shared/custom-workspace-groups'
 import { folderWorkspaceToWorktree } from '../../../../../../shared/folder-workspace-worktree'
@@ -33,6 +35,28 @@ function argsFor(
 }
 
 describe('custom group rows', () => {
+  it.each(['none', 'repo', 'pr-status', 'workspace-status'] as const)(
+    'supports subgroups under %s without changing workspace metadata',
+    (parentGroupBy) => {
+      const state = { ...assignCustomWorkspaceGroup(data, card, 'frontend'), parentGroupBy }
+      const before = { ...card }
+      const rows = buildRows(...argsFor(state))
+      const parent =
+        parentGroupBy === 'none' ? null : getGroupKeyForWorktree(parentGroupBy, card, repoMap, null)
+      expect(rows.filter((row) => row.type === 'item')).toHaveLength(2)
+      expect(rows.find((row) => row.type === 'item' && row.worktree.id === card.id)).toMatchObject({
+        sectionKey: customGroupChildKey('frontend', parent)
+      })
+      expect(card).toEqual(before)
+      const collapsed = buildRows(
+        ...argsFor(state, [card, other], new Set([customGroupChildKey('frontend', parent)]))
+      )
+      expect(collapsed.filter((row) => row.type === 'item').map((row) => row.worktree.id)).toEqual([
+        other.id
+      ])
+    }
+  )
+
   it('nests the same groups under each status and collapses each level independently', () => {
     const state = { ...assignCustomWorkspaceGroup(data, card, 'frontend'), byStatus: true }
     const cards = [
@@ -50,7 +74,7 @@ describe('custom group rows', () => {
     ])
     expect(
       rows.find((row) => row.type === 'header' && row.key === 'workspace-status:in-review')
-    ).toMatchObject({ count: 1, customParentStatus: 'in-review' })
+    ).toMatchObject({ count: 1, customParentGrouping: 'workspace-status' })
     for (const key of ['workspace-status:in-review', 'custom-group:status/in-review/frontend']) {
       const collapsed = buildRows(...argsFor(state, cards, new Set([key])))
       expect(collapsed.filter((row) => row.type === 'item').map((row) => row.worktree.id)).toEqual([
@@ -157,6 +181,10 @@ describe('custom group rows', () => {
     const nested = buildRows(...args)
     expect(nested.filter((row) => row.type === 'folder-workspace')).toMatchObject([
       { sectionKey: 'custom-group:status/in-progress/infra', groupDepth: 1 }
+    ])
+    args[22] = { ...state, parentGroupBy: 'repo' }
+    expect(buildRows(...args).filter((row) => row.type === 'folder-workspace')).toMatchObject([
+      { sectionKey: customGroupChildKey('infra', 'project-group:project'), groupDepth: 1 }
     ])
   })
 })

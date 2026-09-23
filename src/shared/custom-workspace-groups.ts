@@ -22,6 +22,7 @@ const GroupSchema = z.object({
 const GroupsSchema = z.object({
   enabled: z.boolean(),
   byStatus: z.boolean().optional(),
+  parentGroupBy: z.enum(['none', 'workspace-status', 'pr-status', 'repo']).nullable().optional(),
   groups: z.array(GroupSchema),
   assignments: z.record(z.string(), z.string())
 })
@@ -52,6 +53,9 @@ export function normalizeCustomWorkspaceGroups(value: unknown): CustomWorkspaceG
   return {
     enabled: parsed.data.enabled,
     ...(parsed.data.byStatus ? { byStatus: true } : {}),
+    ...(parsed.data.parentGroupBy !== undefined
+      ? { parentGroupBy: parsed.data.parentGroupBy }
+      : {}),
     groups,
     assignments: Object.fromEntries(
       Object.entries(parsed.data.assignments).filter(([, id]) => ids.has(id))
@@ -72,6 +76,29 @@ export function getCustomWorkspaceGroupId(
   return null
 }
 
+export function getCustomParentGroupBy(
+  state: CustomWorkspaceGroups
+): NonNullable<CustomWorkspaceGroups['parentGroupBy']> | null {
+  return state.parentGroupBy !== undefined
+    ? state.parentGroupBy
+    : state.byStatus
+      ? 'workspace-status'
+      : null
+}
+
+export function customGroupChildKey(groupId: string | null, parentKey: string | null): string {
+  if (parentKey === null) {
+    return customGroupSectionKey(groupId)
+  }
+  if (parentKey.startsWith('workspace-status:')) {
+    return customGroupSectionKey(
+      groupId,
+      decodeURIComponent(parentKey.slice('workspace-status:'.length))
+    )
+  }
+  return `${CUSTOM_GROUP_KEY_PREFIX}within/${encodeURIComponent(parentKey)}/${encodeURIComponent(groupId ?? UNGROUPED_CUSTOM_GROUP_ID)}`
+}
+
 export function customGroupSectionKey(
   groupId: string | null,
   statusId: string | null = null
@@ -84,20 +111,22 @@ export function customGroupSectionKey(
 
 export function parseCustomGroupSectionKey(
   key: string
-): { groupId: string | null; statusId: string | null } | null {
+): { groupId: string | null; statusId: string | null; parentKey: string | null } | null {
   if (!key.startsWith(CUSTOM_GROUP_KEY_PREFIX)) {
     return null
   }
   const suffix = key.slice(CUSTOM_GROUP_KEY_PREFIX.length)
   try {
     const parts = suffix.split('/')
-    const nested = parts[0] === 'status' && parts.length === 3
+    const nested = (parts[0] === 'status' || parts[0] === 'within') && parts.length === 3
     const id = nested ? decodeURIComponent(parts[2]!) : suffix
-    const statusId = nested ? decodeURIComponent(parts[1]!) : null
-    if (!id || (nested && !statusId)) {
+    const parent = nested ? decodeURIComponent(parts[1]!) : null
+    const statusId = nested && parts[0] === 'status' ? parent : null
+    const parentKey = statusId !== null ? getWorkspaceStatusGroupKey(statusId) : parent
+    if (!id || (nested && !parent)) {
       return null
     }
-    return { groupId: id === UNGROUPED_CUSTOM_GROUP_ID ? null : id, statusId }
+    return { groupId: id === UNGROUPED_CUSTOM_GROUP_ID ? null : id, statusId, parentKey }
   } catch {
     return null
   }
@@ -110,7 +139,9 @@ export function getCustomWorkspaceGroupKey(
 ): string {
   return customGroupSectionKey(
     getCustomWorkspaceGroupId(state, workspace),
-    state.byStatus ? getWorkspaceStatus(workspace, statuses) : null
+    getCustomParentGroupBy(state) === 'workspace-status'
+      ? getWorkspaceStatus(workspace, statuses)
+      : null
   )
 }
 
@@ -120,7 +151,7 @@ export function getCustomWorkspaceGroupKeys(
   statuses: readonly WorkspaceStatusDefinition[] = cloneDefaultWorkspaceStatuses()
 ): string[] {
   const key = getCustomWorkspaceGroupKey(state, workspace, statuses)
-  return state.byStatus
+  return getCustomParentGroupBy(state) === 'workspace-status'
     ? [getWorkspaceStatusGroupKey(getWorkspaceStatus(workspace, statuses)), key]
     : [key]
 }

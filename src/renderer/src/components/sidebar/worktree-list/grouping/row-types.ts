@@ -21,7 +21,7 @@ export type GroupHeaderRow = {
   count: number
   tone: string
   customGroup?: boolean
-  customParentStatus?: string
+  customParentGrouping?: WorktreeGroupBy
   customGroupDropKey?: string
   icon?: React.ComponentType<{ className?: string }>
   repo?: Repo
