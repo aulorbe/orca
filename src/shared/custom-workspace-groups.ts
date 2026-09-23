@@ -1,4 +1,10 @@
 import { z } from 'zod'
+import type { WorkspaceStatusDefinition, Worktree } from './worktree/types'
+import {
+  cloneDefaultWorkspaceStatuses,
+  getWorkspaceStatus,
+  getWorkspaceStatusGroupKey
+} from './workspace-statuses'
 import {
   getWorkspaceCardKey,
   getWorkspaceCardKeys,
@@ -15,6 +21,7 @@ const GroupSchema = z.object({
 })
 const GroupsSchema = z.object({
   enabled: z.boolean(),
+  byStatus: z.boolean().optional(),
   groups: z.array(GroupSchema),
   assignments: z.record(z.string(), z.string())
 })
@@ -44,6 +51,7 @@ export function normalizeCustomWorkspaceGroups(value: unknown): CustomWorkspaceG
   })
   return {
     enabled: parsed.data.enabled,
+    ...(parsed.data.byStatus ? { byStatus: true } : {}),
     groups,
     assignments: Object.fromEntries(
       Object.entries(parsed.data.assignments).filter(([, id]) => ids.has(id))
@@ -64,11 +72,57 @@ export function getCustomWorkspaceGroupId(
   return null
 }
 
+export function customGroupSectionKey(
+  groupId: string | null,
+  statusId: string | null = null
+): string {
+  const id = groupId ?? UNGROUPED_CUSTOM_GROUP_ID
+  return statusId === null
+    ? `${CUSTOM_GROUP_KEY_PREFIX}${id}`
+    : `${CUSTOM_GROUP_KEY_PREFIX}status/${encodeURIComponent(statusId)}/${encodeURIComponent(id)}`
+}
+
+export function parseCustomGroupSectionKey(
+  key: string
+): { groupId: string | null; statusId: string | null } | null {
+  if (!key.startsWith(CUSTOM_GROUP_KEY_PREFIX)) {
+    return null
+  }
+  const suffix = key.slice(CUSTOM_GROUP_KEY_PREFIX.length)
+  try {
+    const parts = suffix.split('/')
+    const nested = parts[0] === 'status' && parts.length === 3
+    const id = nested ? decodeURIComponent(parts[2]!) : suffix
+    const statusId = nested ? decodeURIComponent(parts[1]!) : null
+    if (!id || (nested && !statusId)) {
+      return null
+    }
+    return { groupId: id === UNGROUPED_CUSTOM_GROUP_ID ? null : id, statusId }
+  } catch {
+    return null
+  }
+}
+
 export function getCustomWorkspaceGroupKey(
   state: CustomWorkspaceGroups,
-  workspace: WorkspaceCardIdentity
+  workspace: WorkspaceCardIdentity & Pick<Worktree, 'workspaceStatus'>,
+  statuses: readonly WorkspaceStatusDefinition[] = cloneDefaultWorkspaceStatuses()
 ): string {
-  return `${CUSTOM_GROUP_KEY_PREFIX}${getCustomWorkspaceGroupId(state, workspace) ?? UNGROUPED_CUSTOM_GROUP_ID}`
+  return customGroupSectionKey(
+    getCustomWorkspaceGroupId(state, workspace),
+    state.byStatus ? getWorkspaceStatus(workspace, statuses) : null
+  )
+}
+
+export function getCustomWorkspaceGroupKeys(
+  state: CustomWorkspaceGroups,
+  workspace: WorkspaceCardIdentity & Pick<Worktree, 'workspaceStatus'>,
+  statuses: readonly WorkspaceStatusDefinition[] = cloneDefaultWorkspaceStatuses()
+): string[] {
+  const key = getCustomWorkspaceGroupKey(state, workspace, statuses)
+  return state.byStatus
+    ? [getWorkspaceStatusGroupKey(getWorkspaceStatus(workspace, statuses)), key]
+    : [key]
 }
 
 export function saveCustomWorkspaceGroup(
@@ -99,27 +153,67 @@ export function assignCustomWorkspaceGroup(
   workspace: WorkspaceCardIdentity,
   groupId: string | null
 ): CustomWorkspaceGroups {
+  return assignCustomWorkspacesGroup(state, [workspace], groupId)
+}
+
+export function assignCustomWorkspacesGroup(
+  state: CustomWorkspaceGroups,
+  workspaces: readonly WorkspaceCardIdentity[],
+  groupId: string | null
+): CustomWorkspaceGroups {
   if (groupId !== null && !state.groups.some((group) => group.id === groupId)) {
     throw new Error('Group no longer exists.')
   }
   const assignments = { ...state.assignments }
-  for (const key of getWorkspaceCardKeys(workspace)) {
-    delete assignments[key]
-  }
-  if (groupId !== null) {
-    assignments[getWorkspaceCardKey(workspace)] = groupId
+  for (const workspace of workspaces) {
+    for (const key of getWorkspaceCardKeys(workspace)) {
+      delete assignments[key]
+    }
+    if (groupId !== null) {
+      assignments[getWorkspaceCardKey(workspace)] = groupId
+    }
   }
   return { ...state, assignments }
 }
 
 export function deleteCustomWorkspaceGroup(
   state: CustomWorkspaceGroups,
-  groupId: string
+  groupId: string,
+  destination: string | null = null
 ): CustomWorkspaceGroups {
+  if (
+    destination === groupId ||
+    (destination !== null && !state.groups.some((group) => group.id === destination))
+  ) {
+    throw new Error('Choose another existing group or Ungrouped.')
+  }
+  const assignments = Object.fromEntries(
+    Object.entries(state.assignments).flatMap(([key, id]) => {
+      if (id !== groupId) {
+        return [[key, id]]
+      }
+      return destination === null ? [] : [[key, destination]]
+    })
+  )
   return normalizeCustomWorkspaceGroups({
     ...state,
+    assignments,
     groups: state.groups.filter((group) => group.id !== groupId)
   })
+}
+
+export function clearDeletedCustomGroupAssignments(
+  state: CustomWorkspaceGroups,
+  groupId: string,
+  workspaces: readonly WorkspaceCardIdentity[]
+): CustomWorkspaceGroups {
+  const keys = new Set(workspaces.flatMap(getWorkspaceCardKeys))
+  return {
+    ...state,
+    assignments: Object.fromEntries(
+      Object.entries(state.assignments).filter(([key, id]) => id !== groupId || !keys.has(key))
+    )
+  }
 }
 
 export function moveCustomWorkspaceGroup(

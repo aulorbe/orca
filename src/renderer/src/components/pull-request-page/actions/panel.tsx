@@ -27,6 +27,7 @@ import { presentGitHubPRMergeState } from '@/components/github-pr-merge-state'
 import { resolveGitHubPRMergeMethods } from '../../../../../shared/github/pull-request-merge-methods'
 import { resolvePullRequestRepo } from '@/components/github/github-work-item-identity'
 import { translate } from '@/i18n/i18n'
+import { reviewBrowserLinkLabel } from '@/lib/review-browser-link-label'
 import type { GitHubWorkItem } from '../../../../../shared/github/work-item-types'
 import type { TaskSourceContext } from '../../../../../shared/task-source-context'
 import type { PullRequestPageProjectOrigin } from '../page-types'
@@ -193,7 +194,7 @@ export function PRActionsPanel({
             ))}
             <DropdownMenuItem onSelect={() => window.api.shell.openUrl(item.url)}>
               <ExternalLink className="size-4" />
-              {translate('auto.components.PullRequestPage.7df8d5fc60', 'Open GitHub merge box')}
+              {reviewBrowserLinkLabel(item.url)}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

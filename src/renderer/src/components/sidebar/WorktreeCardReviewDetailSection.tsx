@@ -17,6 +17,10 @@ import { DetailHeader, MetadataActionIcon } from './WorktreeCardMetadataControls
 import { ReviewChecksBadge, ReviewStateBadge } from './WorktreeCardMetadataStatusBadges'
 import type { WorktreeCardPrDisplay } from './worktree-card-pr-display'
 import { getProviderName, getReviewLabel, ReviewIcon } from './worktree-review-helpers'
+import {
+  preferredReviewBrowserName,
+  preferredReviewUrl
+} from '../../../../shared/preferred-review-url'
 import { HostedReviewUnlinkMenuItem } from '@/components/HostedReviewUnlinkMenuItem'
 
 type WorktreeCardReviewDetailSectionProps = {
@@ -156,9 +160,9 @@ export function WorktreeCardReviewDetailSection({
                 label={translate(
                   'auto.components.sidebar.WorktreeCardMeta.ad25c3ff05',
                   'View on {{value0}}',
-                  { value0: reviewProvider }
+                  { value0: preferredReviewBrowserName(review.url, reviewProvider) }
                 )}
-                href={review.url}
+                href={preferredReviewUrl(review.url)}
               >
                 <ExternalLink className="size-3" />
               </MetadataActionIcon>

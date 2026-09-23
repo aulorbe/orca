@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useRef } from 'react'
 import type React from 'react'
-import type { WorkspaceStatus } from '../../../../../../shared/worktree/types'
+import type { WorkspaceStatus, Worktree } from '../../../../../../shared/worktree/types'
+import type { WorkspaceCardIdentity } from '../../../../../../shared/workspace-card-identity'
+import { getWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
+import { customGroupDragRows } from './custom-group-drag-rows'
 import type { HostSectionRow } from '../../host-section-rows'
 import { PINNED_GROUP_KEY } from '../grouping/group-keys'
 import { WORKTREE_SIDEBAR_VIRTUAL_ROW_GAP } from '../viewport/virtual-rows'
@@ -40,7 +43,8 @@ export function useWorktreeDragSession(args: {
   rows: HostSectionRow[]
   scrollRef: React.RefObject<HTMLDivElement | null>
 }) {
-  const { rows, scrollRef } = args
+  const { scrollRef } = args
+  const rows = useMemo(() => customGroupDragRows(args.rows), [args.rows])
   const worktreeDragSessionRef = useRef<WorktreeSidebarDragSession | null>(null)
   // Why: cross-group hovers hit-test a group the session never captured, so hold
   // that group's drop decision separately or a card expanding in the target group
@@ -60,6 +64,31 @@ export function useWorktreeDragSession(args: {
         )
         .map((row) => ({ worktreeId: row.worktree.id, depth: row.depth })),
     [naturalDragWorktreeIds, rows]
+  )
+  const getDraggedWorkspaces = useCallback(
+    (selected: readonly Worktree[]): WorkspaceCardIdentity[] => {
+      const items = rows.filter((row): row is WorktreeItemRow => row.type === 'item')
+      const byIdentity = new Map(
+        items.map((row) => [getWorktreeHostIdentity(row.worktree), row.worktree])
+      )
+      for (const workspace of selected) {
+        byIdentity.set(getWorktreeHostIdentity(workspace), workspace)
+      }
+      const expanded = expandDraggedWorktreeIdsForVisibleLineage(
+        items.map((row) => ({
+          worktreeId: getWorktreeHostIdentity(row.worktree),
+          depth: row.depth
+        })),
+        selected.map(getWorktreeHostIdentity)
+      )
+      return expanded.flatMap((key) => {
+        const workspace = byIdentity.get(key)
+        return workspace
+          ? [{ id: workspace.id, hostId: workspace.hostId, instanceId: workspace.instanceId }]
+          : []
+      })
+    },
+    [rows]
   )
   const getReorderDraggedIds = useCallback(
     (draggedIds: readonly string[]) =>
@@ -216,6 +245,7 @@ export function useWorktreeDragSession(args: {
       worktreeDragUnitGroups,
       groupKeyByRowKey,
       groupIndexByRowKey,
+      getDraggedWorkspaces,
       getReorderDraggedIds,
       getReorderUnitDraggedIds,
       refreshWorktreeDragSession,
@@ -225,6 +255,7 @@ export function useWorktreeDragSession(args: {
     [
       computeWorktreeDrop,
       computeWorktreeStatusDrop,
+      getDraggedWorkspaces,
       getReorderDraggedIds,
       getReorderUnitDraggedIds,
       groupIndexByRowKey,

@@ -9,10 +9,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter
+  DialogDescription
 } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { CustomGroupDeletionChoices } from './CustomGroupDeletionChoices'
 import {
   CUSTOM_GROUP_NAME_LIMIT,
   type CustomWorkspaceGroup
@@ -26,8 +26,8 @@ export function CustomGroupsManager({
   onOpenChange: (open: boolean) => void
 }) {
   const groups = useCustomWorkspaceGroups((s) => s.data.groups)
+  const byStatus = useCustomWorkspaceGroups((s) => s.data.byStatus)
   const saveGroup = useCustomWorkspaceGroups((s) => s.saveGroup)
-  const deleteGroup = useCustomWorkspaceGroups((s) => s.deleteGroup)
   const moveGroup = useCustomWorkspaceGroups((s) => s.moveGroup)
   const [name, setName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -66,30 +66,28 @@ export function CustomGroupsManager({
           </DialogTitle>
           <DialogDescription>
             {pendingDelete
-              ? 'Its cards will move to Ungrouped. No workspaces will be deleted.'
-              : 'Create your own groups, then choose a group in each card’s hover details.'}
+              ? 'Choose what happens to this group’s cards.'
+              : byStatus
+                ? 'Groups are shared across statuses. Each card keeps its status unless you drag it to another status.'
+                : 'Create your own groups, then choose a group in each card’s hover details.'}
           </DialogDescription>
         </DialogHeader>
         {pendingDelete ? (
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setPendingDelete(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() =>
-                run(() => {
-                  deleteGroup(pendingDelete.id)
-                  if (editingId === pendingDelete.id) {
-                    reset()
-                  }
-                  setPendingDelete(null)
-                })
+          <CustomGroupDeletionChoices
+            groupId={pendingDelete.id}
+            onCancel={() => setPendingDelete(null)}
+            onMoved={() => {
+              if (editingId === pendingDelete.id) {
+                reset()
               }
-            >
-              Delete group
-            </Button>
-          </DialogFooter>
+              setPendingDelete(null)
+            }}
+            onReviewOpened={() => {
+              reset()
+              setPendingDelete(null)
+              onOpenChange(false)
+            }}
+          />
         ) : (
           <>
             <form

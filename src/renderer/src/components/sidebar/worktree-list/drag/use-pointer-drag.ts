@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react'
 import type React from 'react'
 import type { WorkspaceStatus, Worktree } from '../../../../../../shared/worktree/types'
 import { getWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
+import { CUSTOM_GROUP_KEY_PREFIX } from '../../../../../../shared/custom-workspace-groups'
 import { hasWorkspaceKanbanSidebarDropBoard } from '../../workspace-kanban-sidebar-drop'
 import {
   createSidebarDragPreview,
@@ -176,14 +177,16 @@ export function useWorktreePointerDrag(args: {
       if (
         rects.length <= 1 &&
         !hasWorkspaceKanbanSidebarDropBoard() &&
-        !canPreviewWorkspaceBoardOnDrag
+        !canPreviewWorkspaceBoardOnDrag &&
+        !sourceGroupKey.startsWith(CUSTOM_GROUP_KEY_PREFIX)
       ) {
         return
       }
-      const draggedIds =
+      const draggedWorkspaces =
         selectedWorktreeIds.has(getWorktreeHostIdentity(worktree)) && selectedWorktrees.length > 1
-          ? selectedWorktrees.map((worktree) => worktree.id)
-          : [worktreeId]
+          ? selectedWorktrees
+          : [worktree]
+      const draggedIds = draggedWorkspaces.map((workspace) => workspace.id)
       const reorderDraggedIds = session.getReorderDraggedIds(draggedIds)
       const reorderUnitDraggedIds = session.getReorderUnitDraggedIds(
         sourceGroupKey,
@@ -198,6 +201,9 @@ export function useWorktreePointerDrag(args: {
         currentY: event.clientY,
         worktreeId,
         draggedIds,
+        ...(sourceGroupKey.startsWith(CUSTOM_GROUP_KEY_PREFIX)
+          ? { draggedWorkspaces: session.getDraggedWorkspaces(draggedWorkspaces) }
+          : {}),
         reorderDraggedIds,
         reorderUnitDraggedIds,
         sourceGroupKey,
@@ -254,9 +260,19 @@ export function useWorktreePointerDrag(args: {
       event.stopImmediatePropagation()
     }
 
+    // A new gesture is not the synthetic click left over from the preceding drop.
+    const handlePointerDown = (): void => {
+      if (!worktreePointerDragRef.current) {
+        suppressWorktreeClickUntilRef.current = 0
+      }
+    }
     document.addEventListener('click', handleClick, true)
-    return () => document.removeEventListener('click', handleClick, true)
-  }, [suppressWorktreeClickUntilRef])
+    document.addEventListener('pointerdown', handlePointerDown, true)
+    return () => {
+      document.removeEventListener('click', handleClick, true)
+      document.removeEventListener('pointerdown', handlePointerDown, true)
+    }
+  }, [suppressWorktreeClickUntilRef, worktreePointerDragRef])
 
   return { handleWorktreeRowPointerDown, handleWorktreeRowClickCapture }
 }

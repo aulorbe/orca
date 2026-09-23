@@ -125,7 +125,7 @@ describe('openWorkspaceBrowserTab', () => {
 
     expect(createBrowserTab).toHaveBeenCalledWith(
       WORKSPACE_ID,
-      'https://github.com/acme/orca/pull/456',
+      'https://app.graphite.com/github/pr/acme/orca/456',
       expect.objectContaining({ activate: false })
     )
   })

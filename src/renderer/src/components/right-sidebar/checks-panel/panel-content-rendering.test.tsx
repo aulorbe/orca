@@ -182,7 +182,7 @@ describe('checks panel concrete content', () => {
     expect(screen.getByText('No comments')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Refresh' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '#42' }).getAttribute('title')).toContain(
-      'Open on GitHub'
+      'Open in Graphite'
     )
   })
 })

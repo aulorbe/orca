@@ -5,6 +5,25 @@ The custom build uses `com.aulorbe.orca.custom` and a separate profile at
 `~/Library/Application Support/Orca Custom`. Its settings, session records, runtime endpoint,
 terminal daemon, and Keychain application identity are separate from the stock app.
 
+## Continuous development (recommended for UI changes)
+
+With dependencies installed, run:
+
+```sh
+cd ~/Desktop/orca
+npm run dev:custom
+```
+
+Keep that terminal open. **Orca Custom Dev** loads renderer/UI edits automatically—no installer
+needed. Main-process and CLI changes require stopping and restarting this command. Do not add
+`--watch`: the default keeps backend restarts under your control.
+
+Dev uses `~/Library/Application Support/Orca Custom Dev`, separate from both installed apps.
+Add your projects once in this dev profile; existing installed-app tasks and settings are not
+moved over automatically. Keep critical tasks in the installed app while developing. Ctrl+C
+stops the dev app and can stop its dev terminals. Its terminals get a scoped CLI automatically;
+you do not need to install a global CLI for this workflow.
+
 ## Build and install
 
 Use Node 24 and a current Corepack that supports the repository's pinned pnpm 12.
@@ -59,13 +78,32 @@ Custom's renderer storage, not synced to GitHub or other Orca installations.
 Choose **Workspace options → Group by → Custom**, then **Manage custom groups…**. There is one
 saved set of groups: add names, rename them, reorder with the arrows, or delete a group.
 
-Hover a card and choose its **Custom group**. Each card belongs to one group; cards without a
-group appear under **Ungrouped**. Deleting a group moves its cards to Ungrouped—it does not delete
-workspaces. Pinned cards keep the existing Pinned section behavior.
+For a two-level layout, choose **Workspace options → Group by → Status**, then enable
+**Custom subgroups**. You can also hover a status heading and click **+** to create groups.
+The same set of group names appears under each status; you do not need to create them twice.
+Dragging between groups within a status keeps the status unchanged. Dragging to a different
+status changes it too; dropping on a status heading puts the card in that status’s Ungrouped
+section. Status and subgroup sections collapse independently. Switching back to flat **Custom**
+keeps all assignments. Renaming or deleting a shared group applies across statuses.
+
+Drag cards between custom group headers (including **Ungrouped**), or choose **Custom group** in
+a card's hover details. Each card belongs to one group. Double-click a custom group title to rename
+it, or right-click its title and choose **Edit**; Ungrouped is fixed.
+
+When deleting a group, choose where its cards go: Ungrouped, another group, or workspace deletion.
+Moving is the default. Workspace deletion uses Orca's existing review/confirmation flow, and the
+group is kept on cancellation or partial failure. Primary, folder, and unavailable workspaces
+must be handled individually rather than bulk-deleted here. Pinned cards retain the existing
+Pinned section behavior.
 
 Groups are saved locally and do not change statuses or tags. Switching back to another grouping
 option keeps your custom groups for later. This organizes the sidebar; the status board keeps its
 existing columns.
+
+## PR links
+
+GitHub PR links opened from the app go to Graphite. GitHub API records and copied canonical URLs
+stay unchanged; issues, enterprise GitHub hosts, and non-GitHub review links keep their destinations.
 
 The original `pnpm build:mac` packaging path remains available and still produces **Orca.app**.
 Use **`pnpm build:mac:custom`** for the side-by-side application.

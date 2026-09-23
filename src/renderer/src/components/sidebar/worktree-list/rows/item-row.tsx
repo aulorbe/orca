@@ -1,4 +1,5 @@
 import React from 'react'
+import { CUSTOM_GROUP_KEY_PREFIX } from '../../../../../../shared/custom-workspace-groups'
 import { cn } from '@/lib/utils'
 import type { AppState } from '@/store/types'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
@@ -70,6 +71,7 @@ function getWorktreeItemRowGeometry(
   itemRow: WorktreeItemRow,
   nested: boolean
 ): { surfaceInset: number; cardContentIndent: number; lineageChildrenInlineOffset?: number } {
+  const isGrouped = ctx.groupBy !== 'none' || itemRow.sectionKey.startsWith(CUSTOM_GROUP_KEY_PREFIX)
   const projectGroupId = itemRow.repo?.projectGroupId
   const isFolderBackedRepoChild =
     ctx.groupBy === 'repo' &&
@@ -83,7 +85,7 @@ function getWorktreeItemRowGeometry(
           lineageDepth
         })
       : getWorktreeCardContentIndent({
-          isGrouped: ctx.groupBy !== 'none',
+          isGrouped,
           groupDepth: itemRow.groupDepth,
           lineageDepth
         })
@@ -96,7 +98,7 @@ function getWorktreeItemRowGeometry(
     : null
   // Why: grouped rows inherit their header depth, but the card surface still spans the full row.
   const paddingLeft =
-    nested && ctx.groupBy !== 'none'
+    nested && isGrouped
       ? getWorktreeCardContentIndent({
           isGrouped: false,
           groupDepth: itemRow.groupDepth,
@@ -111,7 +113,7 @@ function getWorktreeItemRowGeometry(
           lineageDepth: paddingDepth
         })
       : getWorktreeCardSurfaceInset({
-          isGrouped: ctx.groupBy !== 'none',
+          isGrouped,
           groupDepth: itemRow.groupDepth
         })
   return {
@@ -163,6 +165,7 @@ export function renderWorktreeItemRow(
       className={cn(
         // Why: don't transition 'transform' — it lags/flashes when TanStack Virtual repositions adjacent rows.
         'relative transition-[opacity,filter] duration-150 ease-out',
+        'data-[custom-group-drop-hover=true]:rounded-md data-[custom-group-drop-hover=true]:bg-worktree-sidebar-accent data-[custom-group-drop-hover=true]:ring-1 data-[custom-group-drop-hover=true]:ring-worktree-sidebar-ring/40',
         ctx.worktreeDragState.draggingWorktreeId === itemRow.worktree.id &&
           // Why: the fixed drag preview is the affordance; a translucent source row would bleed through sticky headers/footers.
           'pointer-events-none opacity-0'

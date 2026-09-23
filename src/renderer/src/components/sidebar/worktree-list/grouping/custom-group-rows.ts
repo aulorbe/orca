@@ -1,6 +1,6 @@
 import { folderWorkspaceToWorktree } from '../../../../../../shared/folder-workspace-worktree'
 import {
-  CUSTOM_GROUP_KEY_PREFIX,
+  customGroupSectionKey,
   getCustomWorkspaceGroupId,
   UNGROUPED_CUSTOM_GROUP_ID,
   type CustomWorkspaceGroups
@@ -15,7 +15,7 @@ import {
   type RenderableFolderWorkspace
 } from './folder-workspace-lanes'
 
-type Context = Pick<
+export type CustomGroupRowsContext = Pick<
   SectionAppendContext,
   | 'result'
   | 'repoMap'
@@ -30,10 +30,11 @@ type Context = Pick<
 type Bucket = { name: string; items: Worktree[]; folders: RenderableFolderWorkspace[] }
 
 export function appendCustomGroupRows(
-  ctx: Context,
+  ctx: CustomGroupRowsContext,
   data: CustomWorkspaceGroups,
   worktrees: Worktree[],
-  folders: readonly RenderableFolderWorkspace[]
+  folders: readonly RenderableFolderWorkspace[],
+  statusId: string | null = null
 ): void {
   const buckets = new Map<string, Bucket>(
     data.groups.map((group) => [group.id, { name: group.name, items: [], folders: [] }])
@@ -52,16 +53,15 @@ export function appendCustomGroupRows(
   }
   for (const [id, bucket] of buckets) {
     const count = bucket.items.length + bucket.folders.length
-    if (id === UNGROUPED_CUSTOM_GROUP_ID && count === 0) {
-      continue
-    }
-    const key = `${CUSTOM_GROUP_KEY_PREFIX}${id}`
+    const key = customGroupSectionKey(id, statusId)
+    const groupDepth = statusId === null ? 0 : 1
     ctx.result.push({
       type: 'header',
       key,
       label: bucket.name,
       count,
       customGroup: true,
+      projectGroupDepth: groupDepth,
       tone: PROJECT_GROUP_META.tone,
       icon: PROJECT_GROUP_META.icon,
       worktreeIds: bucket.items.map((worktree) => worktree.id),
@@ -84,7 +84,7 @@ export function appendCustomGroupRows(
     appendWorktreeRows(ctx.result, bucket.items, ctx.repoMap, ctx.lineageById, ctx.worktreeMap, {
       nestLineage: ctx.nestLineage,
       collapsedGroups: ctx.collapsedGroups,
-      groupDepth: 0,
+      groupDepth,
       sectionKey: key,
       hostContextLabelByWorktreeIdentity: ctx.mixedWorktreeHostContextLabels,
       cyclicLineageIds: ctx.cyclicLineageIds
@@ -92,7 +92,7 @@ export function appendCustomGroupRows(
     for (const folder of bucket.folders.sort((a, b) =>
       compareFolderWorkspacesForDisplay(a.folderWorkspace, b.folderWorkspace)
     )) {
-      ctx.result.push(buildFolderWorkspaceRow(folder, 0))
+      ctx.result.push({ ...buildFolderWorkspaceRow(folder, groupDepth), sectionKey: key })
     }
   }
 }

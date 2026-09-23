@@ -21,6 +21,8 @@ export type GroupHeaderRow = {
   count: number
   tone: string
   customGroup?: boolean
+  customParentStatus?: string
+  customGroupDropKey?: string
   icon?: React.ComponentType<{ className?: string }>
   repo?: Repo
   projectGroup?: ProjectGroup | { id: null; name: 'Ungrouped'; tabOrder: number }
@@ -88,6 +90,7 @@ export type PendingCreationRow = {
 export type FolderWorkspaceRow = {
   type: 'folder-workspace'
   key: string
+  sectionKey?: string
   folderWorkspace: FolderWorkspace
   projectGroup: ProjectGroup
   depth: number

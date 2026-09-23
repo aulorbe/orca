@@ -123,6 +123,16 @@ describe('shouldSkipSingleInstanceLock', () => {
     expect(shouldSkipSingleInstanceLock({ isDev: false, isServeMode: false, env: {} })).toBe(false)
   })
 
+  it('protects the fixed Custom Dev profile from a second writer', () => {
+    expect(
+      shouldSkipSingleInstanceLock({
+        isDev: true,
+        isServeMode: false,
+        env: { ORCA_DEV_ENFORCE_SINGLE_INSTANCE_LOCK: '1' }
+      })
+    ).toBe(false)
+  })
+
   it('lets isolated E2E exercise the production single-instance path', () => {
     expect(
       shouldSkipSingleInstanceLock({

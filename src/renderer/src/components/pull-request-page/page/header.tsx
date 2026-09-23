@@ -24,6 +24,7 @@ import { parseOwnerRepoFromItemUrl } from '@/components/github/github-work-item-
 import { formatRelativeTime, getStateLabel } from '@/components/github/work-item-state-presentation'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
+import { reviewBrowserLinkLabel } from '@/lib/review-browser-link-label'
 import type { GitHubWorkItem } from '../../../../../shared/github/work-item-types'
 import { getSolidStateTone } from '../presentation/state-badge'
 
@@ -124,16 +125,13 @@ export function PullRequestPageHeader({
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => window.api.shell.openUrl(workItem.url)}
-                  aria-label={translate(
-                    'auto.components.PullRequestPage.8ecda455a0',
-                    'Open on GitHub'
-                  )}
+                  aria-label={reviewBrowserLinkLabel(workItem.url)}
                 >
                   <ExternalLink className="size-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" sideOffset={6}>
-                {translate('auto.components.PullRequestPage.8ecda455a0', 'Open on GitHub')}
+                {reviewBrowserLinkLabel(workItem.url)}
               </TooltipContent>
             </Tooltip>
           </div>
@@ -196,7 +194,7 @@ export function PullRequestPageHeader({
                 ) : null}
                 <DropdownMenuItem onSelect={() => window.api.shell.openUrl(workItem.url)}>
                   <ExternalLink className="size-4" />
-                  {translate('auto.components.PullRequestPage.8ecda455a0', 'Open on GitHub')}
+                  {reviewBrowserLinkLabel(workItem.url)}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -9,6 +9,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import { CustomGroupsManager } from './CustomGroupsManager'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import {
   useWorkspaceOptionsFilterBadge,
   WorkspaceOptionsMenuItems
@@ -24,7 +25,8 @@ const SidebarWorkspaceOptionsMenu = React.memo(function SidebarWorkspaceOptionsM
   onMenuOpenChange
 }: SidebarWorkspaceOptionsMenuProps) {
   const [open, setOpen] = useState(false)
-  const [managingGroups, setManagingGroups] = useState(false)
+  const managingGroups = useCustomWorkspaceGroups((s) => s.managerOpen)
+  const setManagingGroups = useCustomWorkspaceGroups((s) => s.setManagerOpen)
   const { hasAnyFilter, activeFilterCount, activeFilterLabel } = useWorkspaceOptionsFilterBadge()
 
   const handleOpenChange = useCallback(

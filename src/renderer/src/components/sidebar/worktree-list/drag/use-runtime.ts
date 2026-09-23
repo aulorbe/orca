@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { clearCustomGroupDropHighlight } from './custom-group-drop'
 import type React from 'react'
 import type { WorkspaceStatus } from '../../../../../../shared/worktree/types'
 import { clearWorkspaceKanbanSidebarDropTargetVisual } from '../../workspace-kanban-sidebar-drop'
@@ -56,6 +57,7 @@ export function useWorktreeDragRuntime(args: {
   }, [])
 
   const cleanupWorktreePointerDrag = useCallback(() => {
+    clearCustomGroupDropHighlight()
     const drag = worktreePointerDragRef.current
     cancelWorktreePointerAutoscroll()
     setNativeLineageDropTargetId(null)

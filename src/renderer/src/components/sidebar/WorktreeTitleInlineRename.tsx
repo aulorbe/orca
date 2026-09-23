@@ -37,6 +37,7 @@ type WorktreeTitleInlineRenameProps = {
   className?: string
   editingClassName?: string
   inputClassName?: string
+  inputLabel?: string
   titleWrapper?: (title: React.ReactElement) => React.ReactElement
   wrapTitle?: boolean
   onEditingChange?: (editing: boolean) => void
@@ -57,6 +58,7 @@ export function WorktreeTitleInlineRename({
   className,
   editingClassName,
   inputClassName,
+  inputLabel,
   titleWrapper,
   wrapTitle = false,
   onEditingChange,
@@ -287,10 +289,13 @@ export function WorktreeTitleInlineRename({
             style={{ font: 'inherit' }}
             disabled={saving}
             spellCheck={false}
-            aria-label={translate(
-              'auto.components.sidebar.WorktreeTitleInlineRename.bff3bdd00c',
-              'Rename workspace'
-            )}
+            aria-label={
+              inputLabel ??
+              translate(
+                'auto.components.sidebar.WorktreeTitleInlineRename.bff3bdd00c',
+                'Rename workspace'
+              )
+            }
             data-worktree-title-rename-input="true"
             onChange={(event) =>
               emojiInput.handleValueChange(event.target.value, event.target.selectionStart)

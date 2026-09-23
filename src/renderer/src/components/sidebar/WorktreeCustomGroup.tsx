@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select'
 import {
   getCustomWorkspaceGroupId,
-  getCustomWorkspaceGroupKey,
+  getCustomWorkspaceGroupKeys,
   UNGROUPED_CUSTOM_GROUP_ID
 } from '../../../../shared/custom-workspace-groups'
 import type { WorkspaceCardIdentity } from '../../../../shared/workspace-card-identity'
@@ -40,10 +40,12 @@ export function WorktreeCustomGroup({
           try {
             assignGroup(worktree, value === UNGROUPED_CUSTOM_GROUP_ID ? null : value)
             const groups = useCustomWorkspaceGroups.getState().data
-            const key = getCustomWorkspaceGroupKey(groups, worktree)
             const ui = useAppStore.getState()
-            if (groups.enabled && ui.collapsedGroups.has(key)) {
-              ui.toggleCollapsedGroup(key)
+            const current = ui.getKnownWorktreeById(worktree.id, worktree.hostId) ?? worktree
+            for (const key of getCustomWorkspaceGroupKeys(groups, current, ui.workspaceStatuses)) {
+              if (groups.enabled && ui.collapsedGroups.has(key)) {
+                ui.toggleCollapsedGroup(key)
+              }
             }
           } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Could not change group.')

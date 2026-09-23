@@ -11,6 +11,7 @@ import { useAppStore } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import { getSettingsForRepoRuntimeOwner } from '@/lib/repo-runtime-owner'
 import { translate } from '@/i18n/i18n'
+import { reviewBrowserLinkLabel } from '@/lib/review-browser-link-label'
 import { presentGitHubPRMergeState } from '@/components/github-pr-merge-state'
 import {
   resolveGitHubPRMergeMethods,
@@ -258,7 +259,7 @@ export function PRMergeCell({
         ))}
         <DropdownMenuItem onSelect={() => window.api.shell.openUrl(item.url)}>
           <ExternalLink className="size-4" />
-          {translate('auto.components.TaskPage.37d60046e3', 'Open GitHub merge box')}
+          {reviewBrowserLinkLabel(item.url)}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

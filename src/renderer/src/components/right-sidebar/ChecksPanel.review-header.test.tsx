@@ -73,7 +73,7 @@ describe('ChecksPanelReviewHeader', () => {
   it('opens the PR from the number and puts link management behind the menu', () => {
     const markup = renderHeader()
 
-    expect(markup).toContain('Open on GitHub')
+    expect(markup).toContain('Open in Graphite')
     expect(markup).toContain('system browser')
     expect(markup).toContain('⇧⌘+click')
     expect(markup).not.toContain('⌘+click to open')
@@ -92,7 +92,7 @@ describe('ChecksPanelReviewHeader', () => {
   it('omits the modifier hint when it lands where a plain click already does', () => {
     const markup = renderHeader({ modifierHintDestination: null })
 
-    expect(markup).toContain('Open on GitHub')
+    expect(markup).toContain('Open in Graphite')
     expect(markup).not.toContain('system browser')
     expect(markup).not.toContain('⇧⌘+click')
   })

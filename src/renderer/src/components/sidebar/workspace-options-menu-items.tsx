@@ -5,6 +5,7 @@ import { useWorkspaceTagsStore } from '@/store/workspace-tags'
 import {
   DropdownMenuLabel,
   DropdownMenuItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -98,6 +99,7 @@ export function WorkspaceOptionsMenuItems({
   onManageCustomGroups?: () => void
 }): JSX.Element {
   const customEnabled = useCustomWorkspaceGroups((s) => s.data.enabled)
+  const byStatus = useCustomWorkspaceGroups((s) => s.data.byStatus)
   const repos = useAppStore((s) => s.repos)
   const setWorkspaceHostScope = useAppStore((s) => s.setWorkspaceHostScope)
   const visibleWorkspaceHostIds = useAppStore((s) => s.visibleWorkspaceHostIds)
@@ -152,6 +154,20 @@ export function WorkspaceOptionsMenuItems({
       <div className="px-2 pt-0.5 pb-1">
         <SidebarGroupByToggle groupBy={groupBy} setGroupBy={setGroupBy} />
       </div>
+      {((groupBy === 'workspace-status' && !customEnabled) || (customEnabled && byStatus)) && (
+        <DropdownMenuCheckboxItem
+          checked={customEnabled && byStatus === true}
+          onSelect={(event) => event.preventDefault()}
+          onCheckedChange={(checked) => {
+            setGroupBy('workspace-status')
+            const groups = useCustomWorkspaceGroups.getState()
+            groups.setByStatus(checked)
+            groups.setEnabled(checked)
+          }}
+        >
+          Custom subgroups
+        </DropdownMenuCheckboxItem>
+      )}
       {customEnabled && onManageCustomGroups && (
         <DropdownMenuItem onSelect={onManageCustomGroups}>Manage custom groups…</DropdownMenuItem>
       )}

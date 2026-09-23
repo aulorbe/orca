@@ -1,4 +1,10 @@
 import type React from 'react'
+import {
+  customDragIncludesFolders,
+  customGroupDropTarget,
+  highlightCustomGroupDrop,
+  isCustomGroupDrag
+} from './custom-group-drop'
 import type { WorkspaceStatus } from '../../../../../../shared/worktree/types'
 import {
   clearWorkspaceKanbanSidebarDropTargetVisual,
@@ -94,12 +100,30 @@ export function flushWorktreePointerDragFrame(args: WorktreePointerDragFrameArgs
     offsetX: drag.previewOffsetX,
     offsetY: drag.previewOffsetY
   })
+  const customDrag = isCustomGroupDrag(drag)
+  if (customDrag && ctx.scrollRef.current) {
+    const target = customGroupDropTarget(ctx.scrollRef.current, drag.currentX, drag.currentY)
+    const crossGroup = target && target.key !== drag.sourceGroupKey
+    highlightCustomGroupDrop(ctx.scrollRef.current, crossGroup ? target : null)
+    if (crossGroup || customDragIncludesFolders(drag)) {
+      drag.reorderIntent = null
+      drag.latestStatusDropTarget = null
+      clearWorkspaceKanbanSidebarDropTargetVisual()
+      clearInsertionLine(args)
+      return
+    }
+  }
   if (!ctx.refreshWorktreeDragSession()) {
-    ctx.clearWorktreeDrag()
+    if (customDrag) {
+      clearInsertionLine(args)
+    } else {
+      ctx.clearWorktreeDrag()
+    }
     return
   }
   // Why: show the board preview as soon as a card drag begins so the drop target is visible up front, not only at the sidebar edge.
   if (
+    !customDrag &&
     !drag.workspaceBoardDragPreviewRequested &&
     !args.workspaceBoardOpen &&
     !hasWorkspaceKanbanSidebarDropBoard()

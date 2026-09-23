@@ -4,6 +4,8 @@ import type { VirtualItem } from '@tanstack/react-virtual'
 import { cn } from '@/lib/utils'
 import type { AppState } from '@/store/types'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
+import { CustomGroupTitle } from '../../CustomGroupTitle'
+import { CustomStatusGroupActions } from '../../CustomStatusGroupActions'
 import { RepoForkIndicator } from '@/components/repo/repo-fork-indicator'
 import type { FolderWorkspacePathStatus } from '../../../../../../shared/folder-workspace-path-status'
 import { isConfirmedStaleFolderPathStatus } from '../../../../../../shared/folder-workspace-path-status'
@@ -139,9 +141,10 @@ export function renderWorktreeSectionHeaderRow(args: {
     headerDrag.projectGroupDrag.state.draggingGroupId !== null &&
     headerDrag.projectGroupDrag.state.draggingGroupId === projectGroupIdForHeader
   const headerWorkspaceStatus =
-    ctx.groupBy === 'workspace-status'
+    row.customParentStatus ??
+    (ctx.groupBy === 'workspace-status'
       ? getWorkspaceStatusFromGroupKey(row.key, ctx.workspaceStatuses)
-      : null
+      : null)
   const isPinnedHeader = row.key === PINNED_GROUP_KEY
   const repoHeaderColor = resolveProjectGroupHeaderColor({
     groupBy: ctx.groupBy,
@@ -174,7 +177,7 @@ export function renderWorktreeSectionHeaderRow(args: {
   const isHeaderCollapsed = ctx.collapsedGroups.has(row.key)
   // Why: repo/project/status/pinned share compact section chrome; flat "All" stays a simple label.
   const showHeaderCollapseAffordance =
-    row.count > 0 &&
+    (row.count > 0 || row.customParentStatus !== undefined) &&
     (isRepoHeader ||
       isProjectGroupHeader ||
       headerWorkspaceStatus !== null ||
@@ -208,10 +211,12 @@ export function renderWorktreeSectionHeaderRow(args: {
       <div
         id={getWorktreeOptionId(row.key)}
         role="button"
+        aria-label={headerWorkspaceStatus ? row.label : undefined}
         tabIndex={0}
         aria-expanded={showHeaderCollapseAffordance ? !isHeaderCollapsed : undefined}
         data-repo-header-id={projectIdForHeader}
         data-custom-group-key={row.customGroup ? row.key : undefined}
+        data-custom-status-group-key={row.customGroupDropKey}
         data-repo-header-index={repoHeaderIndex}
         data-repo-header-bucket={repoHeaderBucketKey}
         data-repo-header-section-end={
@@ -238,6 +243,7 @@ export function renderWorktreeSectionHeaderRow(args: {
           // Why: no row-level grab — only the title surface below shows the hand;
           // actions use cursor-pointer so … / + never look reorderable.
           'group relative flex h-7 w-full items-center gap-1.5 pr-2 text-left transition-all',
+          'data-[custom-group-drop-hover=true]:rounded-md data-[custom-group-drop-hover=true]:bg-worktree-sidebar-accent data-[custom-group-drop-hover=true]:ring-1 data-[custom-group-drop-hover=true]:ring-worktree-sidebar-ring/40',
           !(isDraggableRepoHeader || isDraggableProjectGroupHeader) && 'cursor-pointer',
           ctx.highlightedRevealRowKey === row.key &&
             'rounded-md bg-worktree-sidebar-accent ring-1 ring-worktree-sidebar-ring/50',
@@ -254,7 +260,7 @@ export function renderWorktreeSectionHeaderRow(args: {
         style={{
           // Why: non-project headers like "All" are flat-list labels; don't reserve project hierarchy indent.
           paddingLeft:
-            isRepoHeader || isProjectGroupHeader
+            isRepoHeader || isProjectGroupHeader || row.customGroup
               ? getProjectGroupHeaderPaddingLeft(row.projectGroupDepth ?? 0)
               : WORKTREE_SECTION_HEADER_PADDING_LEFT
         }}
@@ -336,7 +342,11 @@ export function renderWorktreeSectionHeaderRow(args: {
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-1.5">
               <div className="min-w-0 truncate text-[13px] font-semibold leading-none">
-                {row.label}
+                {row.customGroup ? (
+                  <CustomGroupTitle groupKey={row.key} name={row.label} />
+                ) : (
+                  row.label
+                )}
               </div>
               <RepoForkIndicator upstream={row.repo?.upstream} />
               <FolderPathStatusIndicator status={projectGroupPathStatus} />
@@ -346,6 +356,7 @@ export function renderWorktreeSectionHeaderRow(args: {
         </div>
 
         <ProjectHeaderActions>
+          {headerWorkspaceStatus ? <CustomStatusGroupActions label={row.label} /> : null}
           {showHeaderCollapseAffordance ? (
             <div
               className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground"

@@ -239,9 +239,8 @@ export function configureOrcaUserDataPathEnv(): void {
 }
 
 export function shouldInstallManagedHooks(isDev: boolean): boolean {
-  void isDev
   // Custom builds reuse installed hooks without rewriting the stock app's user-global scripts at startup.
-  return !isCustomBuild()
+  return !isCustomBuild() && !(isDev && process.env.ORCA_CUSTOM_DEV === '1')
 }
 
 export function installDevParentDisconnectQuit(isDev: boolean): void {

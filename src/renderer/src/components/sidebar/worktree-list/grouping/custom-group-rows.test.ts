@@ -33,6 +33,35 @@ function argsFor(
 }
 
 describe('custom group rows', () => {
+  it('nests the same groups under each status and collapses each level independently', () => {
+    const state = { ...assignCustomWorkspaceGroup(data, card, 'frontend'), byStatus: true }
+    const cards = [
+      { ...card, workspaceStatus: 'in-review' },
+      { ...other, workspaceStatus: 'in-progress' }
+    ]
+    const rows = buildRows(...argsFor(state, cards))
+    expect(
+      rows
+        .filter((row) => row.type === 'item')
+        .map((row) => [row.worktree.id, row.sectionKey, row.groupDepth])
+    ).toEqual([
+      [other.id, 'custom-group:status/in-progress/ungrouped', 1],
+      [card.id, 'custom-group:status/in-review/frontend', 1]
+    ])
+    expect(
+      rows.find((row) => row.type === 'header' && row.key === 'workspace-status:in-review')
+    ).toMatchObject({ count: 1, customParentStatus: 'in-review' })
+    for (const key of ['workspace-status:in-review', 'custom-group:status/in-review/frontend']) {
+      const collapsed = buildRows(...argsFor(state, cards, new Set([key])))
+      expect(collapsed.filter((row) => row.type === 'item').map((row) => row.worktree.id)).toEqual([
+        other.id
+      ])
+    }
+    expect(
+      rows.some((row) => row.type === 'header' && row.key === 'custom-group:status/todo/ungrouped')
+    ).toBe(true)
+  })
+
   it('uses the saved group order, keeps empty groups, and puts unassigned cards last', () => {
     const state = assignCustomWorkspaceGroup(data, card, 'frontend')
     const rows = buildRows(...argsFor(state))
@@ -124,5 +153,10 @@ describe('custom group rows', () => {
     expect(
       rows.find((row) => row.type === 'header' && row.key === 'custom-group:infra')
     ).toMatchObject({ count: 1 })
+    args[22] = { ...state, byStatus: true }
+    const nested = buildRows(...args)
+    expect(nested.filter((row) => row.type === 'folder-workspace')).toMatchObject([
+      { sectionKey: 'custom-group:status/in-progress/infra', groupDepth: 1 }
+    ])
   })
 })

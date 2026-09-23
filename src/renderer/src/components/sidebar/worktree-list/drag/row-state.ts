@@ -1,3 +1,4 @@
+import type { WorkspaceCardIdentity } from '../../../../../../shared/workspace-card-identity'
 import type { WorkspaceKanbanCardTrackedDropTarget } from '../../workspace-kanban-card-pointer-drag-dom'
 import type { WorktreeSidebarDragRect } from '../../worktree-sidebar-drag-autoscroll'
 import type {
@@ -37,6 +38,7 @@ export type WorktreePointerDrag = {
   currentY: number
   worktreeId: string
   draggedIds: readonly string[]
+  draggedWorkspaces?: readonly WorkspaceCardIdentity[]
   reorderDraggedIds: readonly string[]
   reorderUnitDraggedIds: readonly string[]
   sourceGroupKey: string

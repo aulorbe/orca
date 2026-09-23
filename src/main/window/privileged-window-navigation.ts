@@ -1,5 +1,6 @@
 import { shell, type WebContents } from 'electron'
 import { normalizeExternalBrowserUrl } from '../../shared/browser-url'
+import { preferredReviewUrl } from '../../shared/preferred-review-url'
 import { isRendererDocumentNavigation } from './renderer-document-navigation'
 
 /** Keep remote documents from inheriting an Orca window's privileged preload. */
@@ -7,7 +8,7 @@ export function installPrivilegedWindowNavigationPolicy(contents: WebContents): 
   contents.setWindowOpenHandler(({ url }) => {
     const externalUrl = normalizeExternalBrowserUrl(url)
     if (externalUrl) {
-      void shell.openExternal(externalUrl)
+      void shell.openExternal(preferredReviewUrl(externalUrl))
     }
     return { action: 'deny' }
   })
@@ -20,7 +21,7 @@ export function installPrivilegedWindowNavigationPolicy(contents: WebContents): 
     }
     const externalUrl = normalizeExternalBrowserUrl(url)
     if (externalUrl) {
-      void shell.openExternal(externalUrl)
+      void shell.openExternal(preferredReviewUrl(externalUrl))
     }
     event.preventDefault()
   })

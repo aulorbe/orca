@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatRelativeTime } from '@/components/github/work-item-state-presentation'
 import { translate } from '@/i18n/i18n'
+import { reviewBrowserLinkLabel } from '@/lib/review-browser-link-label'
 import type { GitHubWorkItem } from '../../../../../shared/github/work-item-types'
 import { WorkItemIssueSourceIndicator } from './work-item-issue-source-indicator'
 import { WorkItemStateBadge } from '../load-item-details/work-item-state-badge'
@@ -151,16 +152,13 @@ export function GitHubItemDialogPRHeader({
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => window.api.shell.openUrl(workItem.url)}
-                aria-label={translate(
-                  'auto.components.GitHubItemDialog.3fdf777817',
-                  'Open on GitHub'
-                )}
+                aria-label={reviewBrowserLinkLabel(workItem.url)}
               >
                 <ExternalLink className="size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={6}>
-              {translate('auto.components.GitHubItemDialog.3fdf777817', 'Open on GitHub')}
+              {reviewBrowserLinkLabel(workItem.url)}
             </TooltipContent>
           </Tooltip>
         </div>

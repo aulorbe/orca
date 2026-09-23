@@ -1,4 +1,5 @@
 import { translate } from '@/i18n/i18n'
+import { preferredReviewUrl } from '../../../shared/preferred-review-url'
 import { createWebRuntimeSessionBrowserTab } from '@/runtime/web-runtime-session'
 import { useAppStore } from '@/store'
 import type { AppState } from '@/store/types'
@@ -213,6 +214,7 @@ function assertManagedBrowserEnabled(
 export async function openWorkspaceBrowserTab(
   request: OpenWorkspaceBrowserTabRequest
 ): Promise<void> {
+  request = { ...request, url: preferredReviewUrl(request.url) }
   const presentation = intentPresentation(request.intent, request.url)
   if (!validateTarget(request.url)) {
     throw openFailure(presentation.error, 'target is not an http(s) URL')

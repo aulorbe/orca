@@ -1,4 +1,10 @@
 import {
+  commitCustomGroupDrop,
+  customDragIncludesFolders,
+  customGroupDropTarget,
+  isCustomGroupDrag
+} from './custom-group-drop'
+import {
   getWorkspaceKanbanSidebarDropGroups,
   getWorkspaceKanbanSidebarDropTarget,
   isWorkspaceKanbanSidebarDropPointInBoard,
@@ -52,6 +58,18 @@ function commitStatusOrPinDrop(
 // status/pin section, or a reorder slot inside the source group.
 export function commitWorktreePointerDrop(args: PointerDropCommitArgs): void {
   const { event, drag, ctx } = args
+  if (isCustomGroupDrag(drag)) {
+    const target = customGroupDropTarget(ctx.scrollRef.current, event.clientX, event.clientY)
+    if (target && target.key !== drag.sourceGroupKey) {
+      void commitCustomGroupDrop(drag, target.key)
+      ctx.clearWorktreeDrag()
+      return
+    }
+    if (customDragIncludesFolders(drag)) {
+      ctx.clearWorktreeDrag()
+      return
+    }
+  }
   if (!ctx.refreshWorktreeDragSession()) {
     ctx.clearWorktreeDrag()
     return

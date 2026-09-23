@@ -1,4 +1,5 @@
 import { validatePathExistenceBatch } from '../../shared/path-existence-batch'
+import { preferredReviewUrl } from '../../shared/preferred-review-url'
 import { ipcMain, shell, dialog } from 'electron'
 import { constants, copyFile, readFile, stat } from 'node:fs/promises'
 import { basename, extname, isAbsolute, normalize, posix, win32 } from 'node:path'
@@ -166,7 +167,7 @@ export function registerShellHandlers(store: Store): void {
       return
     }
 
-    return shell.openExternal(parsed.toString())
+    return shell.openExternal(preferredReviewUrl(parsed.toString()))
   })
 
   ipcMain.handle('shell:openFilePath', async (_event, filePath: string): Promise<boolean> => {

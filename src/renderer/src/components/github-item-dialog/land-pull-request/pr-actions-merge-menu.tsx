@@ -14,6 +14,7 @@ import type { presentGitHubPRMergeState } from '@/components/github-pr-merge-sta
 import type { resolveGitHubPRMergeMethods } from '../../../../../shared/github/pull-request-merge-methods'
 import type { GitHubPRMergeMethod } from '../../../../../shared/github/pull-request-types'
 import { translate } from '@/i18n/i18n'
+import { reviewBrowserLinkLabel } from '@/lib/review-browser-link-label'
 
 export function PRActionsMergeMenu({
   itemUrl,
@@ -88,7 +89,7 @@ export function PRActionsMergeMenu({
         ))}
         <DropdownMenuItem onSelect={() => window.api.shell.openUrl(itemUrl)}>
           <ExternalLink className="size-4" />
-          {translate('auto.components.GitHubItemDialog.53fe19aefc', 'Open GitHub merge box')}
+          {reviewBrowserLinkLabel(itemUrl)}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

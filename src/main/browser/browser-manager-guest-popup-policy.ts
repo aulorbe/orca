@@ -1,6 +1,7 @@
 import { shell } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { ORCA_BROWSER_BLANK_URL } from '../../shared/constants'
+import { preferredReviewUrl } from '../../shared/preferred-review-url'
 import {
   normalizeBrowserNavigationUrl,
   normalizeExternalBrowserUrl,
@@ -127,7 +128,10 @@ export abstract class BrowserManagerGuestPopupPolicy extends BrowserManagerNavig
       this.attachGuestPolicies(window.webContents, this.resolvePopupOwnerContext(guest.id))
     }
     guest.on('did-create-window', handleDidCreateWindow)
-    guest.setWindowOpenHandler(({ url, frameName, disposition, features }) => {
+    guest.setWindowOpenHandler(({ url, frameName, disposition, features, postBody }) => {
+      if (!postBody) {
+        url = preferredReviewUrl(url)
+      }
       const ownerContext = this.resolvePopupOwnerContext(guest.id)
       const browserTabId = ownerContext?.browserTabId ?? null
       const browserUrl = normalizeBrowserNavigationUrl(url)

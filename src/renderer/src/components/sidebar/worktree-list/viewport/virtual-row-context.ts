@@ -137,6 +137,8 @@ export function buildWorktreeVirtualRowContext(args: BuildArgs): WorktreeVirtual
     },
     folderWorkspace: {
       groupBy: props.groupBy,
+      groupIndexByRowKey: session.groupIndexByRowKey,
+      draggingWorktreeId: runtime.worktreeDragState.draggingWorktreeId,
       newCardStyle: args.newCardStyle,
       settings: args.settings,
       activeWorktreeId: props.activeWorktreeId,

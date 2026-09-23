@@ -26,6 +26,13 @@ vi.mock('../e2e-config', () => ({ getMainE2EConfig: () => ({}) }))
 afterEach(() => vi.unstubAllEnvs())
 
 describe('custom build isolation', () => {
+  it('does not rewrite user-global agent hooks during Custom Dev startup', () => {
+    vi.stubEnv('ORCA_CUSTOM_BUILD', undefined)
+    vi.stubEnv('ORCA_CUSTOM_DEV', '1')
+    expect(shouldInstallManagedHooks(true)).toBe(false)
+    expect(shouldInstallManagedHooks(false)).toBe(true)
+  })
+
   it('separates the profile, CLI discovery, app menu, and Keychain name from stock Orca', () => {
     vi.stubEnv('ORCA_CUSTOM_BUILD', undefined)
     vi.stubEnv('ORCA_USER_DATA_PATH', '/profiles/orca')

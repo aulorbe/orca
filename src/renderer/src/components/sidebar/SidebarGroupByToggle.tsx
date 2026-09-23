@@ -13,7 +13,15 @@ type SidebarGroupByToggleProps = {
 export function SidebarGroupByToggle({ groupBy, setGroupBy }: SidebarGroupByToggleProps) {
   const customEnabled = useCustomWorkspaceGroups((s) => s.data.enabled)
   const setCustomEnabled = useCustomWorkspaceGroups((s) => s.setEnabled)
+  const byStatus = useCustomWorkspaceGroups((s) => s.data.byStatus)
+  const setByStatus = useCustomWorkspaceGroups((s) => s.setByStatus)
   const choose = (value: WorktreeGroupBy | 'custom') => {
+    if (value === 'workspace-status' && customEnabled && byStatus) {
+      return
+    }
+    if (value === 'custom') {
+      setByStatus(false)
+    }
     setCustomEnabled(value === 'custom')
     if (value !== 'custom') {
       setGroupBy(value)
@@ -22,7 +30,7 @@ export function SidebarGroupByToggle({ groupBy, setGroupBy }: SidebarGroupByTogg
   return (
     <ToggleGroup
       type="single"
-      value={customEnabled ? 'custom' : groupBy}
+      value={customEnabled ? (byStatus ? 'workspace-status' : 'custom') : groupBy}
       onValueChange={(value) => {
         const option = OPTIONS.find((entry) => entry.id === value)
         if (option) {

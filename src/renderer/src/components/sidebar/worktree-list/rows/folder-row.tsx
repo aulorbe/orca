@@ -1,4 +1,6 @@
 import React from 'react'
+import { CUSTOM_GROUP_KEY_PREFIX } from '../../../../../../shared/custom-workspace-groups'
+import { cn } from '@/lib/utils'
 import type { VirtualItem } from '@tanstack/react-virtual'
 import type { AppState } from '@/store/types'
 import type { Repo } from '../../../../../../shared/repo-types'
@@ -27,6 +29,8 @@ export type FolderWorkspaceRowContext = {
   activeWorktreeId: string | null
   currentWorktreeId: string | null
   selectedWorktreeIds: ReadonlySet<string>
+  groupIndexByRowKey?: ReadonlyMap<string, number>
+  draggingWorktreeId?: string | null
   repoMap: Map<string, Repo>
   worktreeMap: Map<string, Worktree>
   worktreeLineageById: Record<string, WorktreeLineage>
@@ -81,7 +85,8 @@ export function renderFolderWorkspaceVirtualRow(args: {
     experimentalNewWorktreeCardStyle: ctx.newCardStyle,
     isFolderBackedWorkspaceChild:
       ctx.groupBy === 'repo' && row.projectGroup.createdFrom === 'folder-scan',
-    isGrouped: ctx.groupBy !== 'none',
+    isGrouped:
+      ctx.groupBy !== 'none' || Boolean(row.sectionKey?.startsWith(CUSTOM_GROUP_KEY_PREFIX)),
     groupDepth: row.groupDepth,
     lineageDepth: row.depth
   })
@@ -95,12 +100,22 @@ export function renderFolderWorkspaceVirtualRow(args: {
       data-worktree-id={folderWorktree.id}
       data-worktree-host-identity={folderWorktreeIdentity}
       data-worktree-row-key={folderWorktree.id}
+      data-worktree-section-key={row.sectionKey}
+      data-worktree-drag-id={row.sectionKey ? folderWorktree.id : undefined}
+      data-worktree-drag-group-key={row.sectionKey}
+      data-worktree-drag-group-index={
+        row.sectionKey ? ctx.groupIndexByRowKey?.get(folderWorktree.id) : undefined
+      }
       data-worktree-virtual-row
       data-worktree-virtual-row-key={String(vItem.key)}
       data-worktree-virtual-row-start={vItem.start}
       data-index={vItem.index}
       ref={args.measureVirtualRowElement}
-      className="absolute left-0 right-0 top-0"
+      className={cn(
+        'absolute left-0 right-0 top-0',
+        'data-[custom-group-drop-hover=true]:rounded-md data-[custom-group-drop-hover=true]:bg-worktree-sidebar-accent data-[custom-group-drop-hover=true]:ring-1 data-[custom-group-drop-hover=true]:ring-worktree-sidebar-ring/40',
+        ctx.draggingWorktreeId === folderWorktree.id && 'pointer-events-none opacity-0'
+      )}
       style={{ transform: getVirtualRowTransform(vItem.start) }}
       onClickCapture={ctx.onRowClickCapture}
       onPointerDown={(event) => ctx.onRowPointerDown(event, folderWorktree, folderWorktree.id)}

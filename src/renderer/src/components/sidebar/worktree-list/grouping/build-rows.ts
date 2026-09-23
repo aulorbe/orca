@@ -44,7 +44,7 @@ import type {
 } from './row-types'
 import { getRenderedNaturalAnchorRepoIds, withRepoSectionDisplayLabels } from './section-order'
 import { buildOrderedGroups } from './worktree-grouping'
-import { appendCustomGroupRows } from './custom-group-rows'
+import { appendCustomGroupLayout } from './status-custom-group-rows'
 import type { CustomWorkspaceGroups } from '../../../../../../shared/custom-workspace-groups'
 
 export function buildRows(
@@ -158,7 +158,7 @@ export function buildRows(
     mixedWorktreeHostContextLabels
   )
   if (customGroups?.enabled) {
-    appendCustomGroupRows(
+    appendCustomGroupLayout(
       {
         result,
         repoMap,
@@ -172,7 +172,8 @@ export function buildRows(
       },
       customGroups,
       naturalWorktrees,
-      renderableFolderWorkspaces
+      renderableFolderWorkspaces,
+      workspaceStatuses
     )
     return result
   }

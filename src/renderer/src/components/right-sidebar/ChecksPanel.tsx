@@ -15,6 +15,7 @@ import {
 import type { ChecksPanelReview } from './checks-panel-review'
 import type { ChecksPanelHostedReviewModifierDestination } from './checks-panel-hosted-review-click-routing'
 import { translate } from '@/i18n/i18n'
+import { reviewBrowserLinkLabel } from '@/lib/review-browser-link-label'
 import { PullRequestIcon, prStateColor } from './checks-panel/check-presentation'
 import { useChecksPanelControllerState } from './checks-panel/use-checks-panel-controller-state'
 import { useChecksPanelContextState } from './checks-panel/use-checks-panel-context-state'
@@ -67,11 +68,7 @@ export function ChecksPanelReviewHeader({
     review.provider === 'gitlab'
       ? translate('auto.components.right.sidebar.ChecksPanel.gitlabMoreActions', 'More MR actions')
       : translate('auto.components.right.sidebar.ChecksPanel.653c105ecc', 'More PR actions')
-  const openTitle = translate(
-    'auto.components.right.sidebar.ChecksPanel.5c88c6db07',
-    'Open on {{value0}}',
-    { value0: reviewHostLabel }
-  )
+  const openTitle = reviewBrowserLinkLabel(review.url, reviewHostLabel)
   const modifierHint =
     modifierHintDestination === 'system-browser'
       ? getTerminalUrlSystemBrowserHint()
