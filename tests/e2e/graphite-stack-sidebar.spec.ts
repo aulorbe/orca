@@ -103,6 +103,7 @@ test('stacked PR cards show the Graphite stack on icon and title hover; one-off 
     'aria-current',
     'true'
   )
+  await expect(list.locator('[data-graphite-stack-pr="102"]')).toHaveCSS('font-size', '12px')
   await page
     .locator('[data-slot="hover-card-content"]')
     .screenshot({ path: testInfo.outputPath('graphite-stack-light.png') })

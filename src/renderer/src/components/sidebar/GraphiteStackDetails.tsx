@@ -46,7 +46,7 @@ export function GraphiteStackDetails({ review }: { review: WorktreeCardPrDisplay
             <Button
               key={entry.number}
               variant={entry.number === review.number ? 'secondary' : 'ghost'}
-              size="sm"
+              size="xs"
               className="h-auto w-full justify-start whitespace-normal text-left"
               data-graphite-stack-pr={entry.number}
               aria-current={entry.number === review.number ? 'true' : undefined}
