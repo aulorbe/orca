@@ -178,13 +178,17 @@ describe('getComputerUsePermissionStatus', () => {
     expect(spawn).toHaveBeenCalledWith(
       '/usr/bin/open',
       [
+        '-g',
         '-n',
         '/Applications/Orca Computer Use.app',
         '--args',
         '--permission-status-file',
         permissionStatusPath
       ],
-      { stdio: ['ignore', 'pipe', 'pipe'] }
+      expect.objectContaining({
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: expect.objectContaining({ ORCA_BACKGROUND_LAUNCH: '1' })
+      })
     )
     expect(spawnSync).not.toHaveBeenCalled()
     expect(readFile).toHaveBeenCalledWith(permissionStatusPath, 'utf8')

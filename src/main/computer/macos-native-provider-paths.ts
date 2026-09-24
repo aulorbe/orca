@@ -3,8 +3,9 @@ import { join, resolve } from 'node:path'
 
 export function resolveMacOSComputerUseAppPath(): string | null {
   const override = process.env.ORCA_COMPUTER_MACOS_HELPER_APP_PATH
-  if (override && existsSync(override)) {
-    return override
+  if (override) {
+    // A missing explicitly selected helper must not borrow another app's TCC identity.
+    return existsSync(override) ? override : null
   }
 
   const packaged = [join(process.resourcesPath ?? '', 'Orca Computer Use.app')]

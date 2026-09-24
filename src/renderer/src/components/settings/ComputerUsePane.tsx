@@ -10,6 +10,7 @@ import { useAppStore } from '@/store'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
 import { ComputerUseSkillSetupPanel } from './ComputerUseSkillSetupPanel'
+import { ComputerUsePermissionApp } from './ComputerUsePermissionApp'
 import { translate } from '@/i18n/i18n'
 export { getComputerUsePaneSearchEntries } from './computer-use-search'
 
@@ -71,6 +72,7 @@ export function ComputerUsePane(): React.JSX.Element {
   const permissionOperationSequence = useRef(0)
   const mountedRef = useRef(true)
   const [helperUnavailableReason, setHelperUnavailableReason] = useState<string | null>(null)
+  const [helperAppPath, setHelperAppPath] = useState<string | null>(null)
 
   const stateById = useMemo(
     () => new Map(states.map((state) => [state.id, state.status] as const)),
@@ -157,6 +159,7 @@ export function ComputerUsePane(): React.JSX.Element {
       setPlatform(result.platform)
       setStates(result.permissions)
       setHelperUnavailableReason(result.helperUnavailableReason)
+      setHelperAppPath(result.helperAppPath)
     } catch (error) {
       if (operationId !== permissionOperationSequence.current || !mountedRef.current) {
         return
@@ -255,6 +258,7 @@ export function ComputerUsePane(): React.JSX.Element {
       setPlatform(result.platform)
       setStates(result.permissions)
       setHelperUnavailableReason(result.helperUnavailableReason)
+      setHelperAppPath(result.helperAppPath)
       toast.message(
         translate(
           'auto.components.settings.ComputerUsePane.f189f448a3',
@@ -316,6 +320,7 @@ export function ComputerUsePane(): React.JSX.Element {
             </Button>
           </div>
 
+          <ComputerUsePermissionApp appPath={helperAppPath} />
           <div className="space-y-2">
             <div className="divide-y divide-border/60 rounded-lg border border-border/60">
               {PERMISSIONS.map((permission) => {

@@ -1,6 +1,10 @@
 import { execFileSync } from 'node:child_process'
 import { homedir } from 'node:os'
 import path from 'node:path'
+import {
+  customDevComputerAppPath,
+  prepareCustomDevComputer
+} from './prepare-custom-dev-computer.mjs'
 
 const repoRoot = path.resolve(import.meta.dirname, '../..')
 
@@ -33,6 +37,9 @@ export function customDevEnvironment(
   return {
     ...env,
     ORCA_CUSTOM_DEV: '1',
+    ...(platform === 'darwin'
+      ? { ORCA_COMPUTER_MACOS_HELPER_APP_PATH: customDevComputerAppPath(home) }
+      : {}),
     ORCA_DEV_USER_DATA_PATH: profile,
     ORCA_USER_DATA_PATH: profile,
     ORCA_DEV_DOCK_TITLE: 'Orca Custom Dev',
@@ -54,6 +61,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename) {
     console.log(
       '[custom-dev] UI edits hot-reload. Keep this terminal open; restart this command after backend/CLI edits.'
     )
+    prepareCustomDevComputer({ destination: process.env.ORCA_COMPUTER_MACOS_HELPER_APP_PATH })
     execFileSync(
       process.execPath,
       ['config/scripts/ensure-native-runtime.mjs', '--runtime=electron'],

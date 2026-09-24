@@ -28,6 +28,25 @@ Dev has separate macOS notification permissions. Its System Settings entry is **
 allow notifications and **Badge application icon** there to receive Dock counts. The count
 reflects unread workspace/tab activity, not every completed agent that you have already read.
 
+## Computer Use in Custom Dev (macOS)
+
+The dev launcher installs a separate, user-visible permission helper:
+
+```text
+~/Applications/Orca Custom Dev Computer Use.app
+```
+
+It has its own bundle ID and does not replace the stock app's helper or reset its permissions.
+Unchanged helpers are reused instead of re-signed on every UI hot reload. If the helper binary
+itself is updated, macOS may require granting access again.
+
+After updating an already-running Dev instance, restart its dev command when safe so it uses
+this helper. Then open **Settings → Computer Use**. The pane shows the exact app name/path and
+has **Show permission app in Finder**. Use **Open** for Accessibility and Screenshots, or add
+this helper with **+** in macOS Privacy & Security. Grant **Accessibility** and **Screen Recording**
+to the helper—not the main Orca window—then click **Refresh**. Permissions are always granted by
+you; the launcher only prepares/registers the application.
+
 ## Build and install
 
 Use Node 24 and a current Corepack that supports the repository's pinned pnpm 12.

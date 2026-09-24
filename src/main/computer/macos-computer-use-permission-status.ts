@@ -103,9 +103,10 @@ function launchPermissionStatusHelper(helperAppPath: string, statusPath: string)
   return new Promise((resolve, reject) => {
     const launch = spawn(
       '/usr/bin/open',
-      ['-n', helperAppPath, '--args', '--permission-status-file', statusPath],
+      ['-g', '-n', helperAppPath, '--args', '--permission-status-file', statusPath],
       {
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, ORCA_BACKGROUND_LAUNCH: '1' }
       }
     )
     let stdout = ''

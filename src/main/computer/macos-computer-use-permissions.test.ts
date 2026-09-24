@@ -112,18 +112,41 @@ describe('openComputerUsePermissions', () => {
     })
     expect(spawnSync).toHaveBeenCalledWith(
       '/usr/bin/pkill',
-      ['-f', 'orca-computer-use-macos[[:space:]]+--permission([[:space:]]|$)'],
+      [
+        '-f',
+        '^/Applications/Orca Computer Use\\.app/Contents/MacOS/orca-computer-use-macos[[:space:]]+--permission([[:space:]]|$)'
+      ],
       { stdio: 'ignore' }
     )
     expect(spawnSync).toHaveBeenCalledWith(
       '/usr/bin/pkill',
-      ['-f', 'orca-computer-use-macos[[:space:]]+--permissions([[:space:]]|$)'],
+      [
+        '-f',
+        '^/Applications/Orca Computer Use\\.app/Contents/MacOS/orca-computer-use-macos[[:space:]]+--permissions([[:space:]]|$)'
+      ],
       { stdio: 'ignore' }
     )
     expect(spawn).toHaveBeenCalledWith(
       '/usr/bin/open',
       ['-n', '/Applications/Orca Computer Use.app', '--args', '--permissions'],
       { detached: true, stdio: 'ignore' }
+    )
+  })
+
+  it('names the custom helper and scopes setup cleanup to that app only', async () => {
+    resolveHelperAppPathMock.mockReturnValue(
+      '/Users/test/Applications/Orca Custom Dev Computer Use.app'
+    )
+    mockPermissionStatus('{"accessibility":"not-granted","screenshots":"not-granted"}')
+    const result = await openComputerUsePermissions('accessibility')
+    expect(result.nextStep).toContain('Orca Custom Dev Computer Use')
+    expect(spawnSync).toHaveBeenCalledWith(
+      '/usr/bin/pkill',
+      [
+        '-f',
+        '^/Users/test/Applications/Orca Custom Dev Computer Use\\.app/Contents/MacOS/orca-computer-use-macos[[:space:]]+--permission([[:space:]]|$)'
+      ],
+      { stdio: 'ignore' }
     )
   })
 
@@ -206,6 +229,17 @@ describe('openComputerUsePermissions', () => {
     await expect(openComputerUsePermissions('accessibility')).rejects.toThrow(
       '/Applications/Orca Computer Use.app/Contents/MacOS/orca-computer-use-macos was not found'
     )
+  })
+
+  it('never falls back to resetting the stock identity when a helper ID cannot be read', async () => {
+    resolveHelperAppPathMock.mockReturnValue(
+      '/Users/test/Applications/Orca Custom Dev Computer Use.app'
+    )
+    vi.mocked(execFileSync).mockImplementation(() => {
+      throw new Error('Unreadable plist')
+    })
+    await expect(resetComputerUsePermissions()).rejects.toThrow('No permissions were reset')
+    expect(spawnSync).not.toHaveBeenCalled()
   })
 
   it('resets stale macOS TCC grants for the helper bundle id', async () => {

@@ -7,7 +7,8 @@ describe('Custom Dev launcher', () => {
       {
         ORCA_USER_DATA_PATH: '/stock-profile',
         ORCA_DEV_USER_DATA_PATH: '/other-dev-profile',
-        ORCA_BACKGROUND_LAUNCH: '1'
+        ORCA_BACKGROUND_LAUNCH: '1',
+        ORCA_COMPUTER_MACOS_HELPER_APP_PATH: '/stock/Orca Computer Use.app'
       },
       'darwin',
       '/Users/test'
@@ -19,6 +20,9 @@ describe('Custom Dev launcher', () => {
     expect(env.ORCA_DEV_ENFORCE_SINGLE_INSTANCE_LOCK).toBe('1')
     expect(env.ORCA_BACKGROUND_LAUNCH).toBe('1')
     expect(env.ORCA_CUSTOM_DEV).toBe('1')
+    expect(env.ORCA_COMPUTER_MACOS_HELPER_APP_PATH).toBe(
+      '/Users/test/Applications/Orca Custom Dev Computer Use.app'
+    )
   })
 
   it('supports an explicit isolated test profile', () => {
