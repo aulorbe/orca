@@ -79,7 +79,7 @@ describe('getPRForBranch', () => {
 
     const pr = await getPRForBranch('/repo-root', 'feature/test', null, null, 42)
 
-    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(3)
     expect(ghExecFileAsyncMock).toHaveBeenNthCalledWith(
       1,
       ['api', 'repos/acme/widgets/pulls?head=acme%3Afeature%2Ftest&state=all&per_page=1'],

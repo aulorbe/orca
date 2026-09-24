@@ -32,6 +32,7 @@ import { WorktreeCardIssueDetailSection } from './WorktreeCardIssueDetailSection
 import { WorktreeCardHoverIdentityHeader } from './WorktreeCardHoverIdentityHeader'
 import { WorktreeTags } from './WorktreeTags'
 import { WorktreeCustomGroup } from './WorktreeCustomGroup'
+import { GraphiteStackDetails } from './GraphiteStackDetails'
 import { CommentMarkdownAsync, preloadCommentMarkdown } from './comment-markdown-lazy'
 
 const COMMENT_MARKDOWN_CLASS_NAME =
@@ -379,6 +380,7 @@ export function WorktreeCardDetailsHover({
             </WorktreeCardDetailSection>
           )}
 
+          <GraphiteStackDetails review={review} />
           {detailsAfter}
           {worktree && (
             <WorktreeCustomGroup worktree={worktree} onOpenChange={setGroupPickerOpen} />

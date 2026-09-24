@@ -1,3 +1,4 @@
+import type { GraphiteStack } from '../../../../shared/github/graphite-stack'
 import type { PRRefreshOutcome } from '../../../../shared/github/pull-request-refresh-types'
 import type {
   PRConflictSummary,
@@ -13,6 +14,7 @@ export function assemblePRRefreshFoundOutcome(args: {
   dataRepo: OwnerRepo | null
   dataHeadRepo: OwnerRepo | null
   stack: GitHubPRStack | undefined
+  graphiteStack?: GraphiteStack
   mergeable: PRMergeableState
   stackMergeQueueRequired: boolean | null | undefined
   confirmedContainedHeadOid: string | null
@@ -57,6 +59,7 @@ export function assemblePRRefreshFoundOutcome(args: {
         : {}),
       ...(data.mergeStateStatus !== undefined ? { mergeStateStatus: data.mergeStateStatus } : {}),
       ...(stack ? { stack } : {}),
+      ...(args.graphiteStack ? { graphiteStack: args.graphiteStack } : {}),
       headSha: data.headRefOid,
       ...(confirmedContainedHeadOid ? { confirmedContainedHeadOid } : {}),
       ...(headDivergedFromMergedPRAtOid ? { headDivergedFromMergedPRAtOid } : {}),

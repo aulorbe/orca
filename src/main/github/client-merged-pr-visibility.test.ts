@@ -252,14 +252,14 @@ describe('getPRForBranch', () => {
     })
     const first = await getPRForBranch('/repo-root', 'fix-hibernation-wake')
     expect(first).toMatchObject({ number: 6011, confirmedContainedHeadOid: 'bbbb2222bbbb2222' })
-    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(3)
+    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(4)
 
     mockMergedBranchPRLookupBehindHead()
     const second = await getPRForBranch('/repo-root', 'fix-hibernation-wake')
 
     expect(second).toMatchObject({ number: 6011, confirmedContainedHeadOid: 'bbbb2222bbbb2222' })
-    // No fourth membership call: the confirmed answer is immutable and cached.
-    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(5)
+    // Membership and Graphite metadata are cached; only the two PR lookups repeat.
+    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(6)
   })
 
   it('uses the caller-supplied worktree head for the membership probe without shelling out', async () => {
@@ -530,6 +530,6 @@ describe('getPRForBranch', () => {
     expect(outcome.kind === 'found' ? outcome.pr.headDivergedFromMergedPRAtOid : undefined).toBe(
       undefined
     )
-    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(3)
   })
 })

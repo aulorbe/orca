@@ -1,6 +1,8 @@
 import { getPRConflictSummary } from '../../conflict-summary'
 import type { ghRepoExecOptions, OwnerRepo } from '../../gh-utils'
 import { hydrateGitHubPRStack } from '../../github-pr-stack'
+import { getGraphitePRStack } from '../../graphite-pr-stack'
+import type { GraphiteStack } from '../../../../shared/github/graphite-stack'
 import { detectRepositoryMergeMetadata } from './../detect/repository-merge-metadata'
 import { derivePullRequestMergeable, type PullRequestLookupData } from './pull-request-lookup-data'
 import { getCachedGitHubPRStackSummary } from './pr-stack-summary-cache'
@@ -17,6 +19,7 @@ export async function derivePRRefreshData(args: {
 }): Promise<{
   mergeable: ReturnType<typeof derivePullRequestMergeable>
   stack: PullRequestLookupData['stack']
+  graphiteStack: GraphiteStack | undefined
   stackMergeQueueRequired: boolean | null | undefined
   conflictSummary: Awaited<ReturnType<typeof getPRConflictSummary>>
 }> {
@@ -72,5 +75,8 @@ export async function derivePRRefreshData(args: {
           localGitOptions
         )
       : undefined
-  return { mergeable, stack, stackMergeQueueRequired, conflictSummary }
+  const graphiteStack = dataRepo
+    ? await getGraphitePRStack(dataRepo, data.number, ghOptions, executionScope)
+    : undefined
+  return { mergeable, stack, graphiteStack, stackMergeQueueRequired, conflictSummary }
 }

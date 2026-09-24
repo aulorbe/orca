@@ -1,3 +1,5 @@
+import type { GraphiteStack } from './graphite-stack'
+
 export type PRState = 'open' | 'closed' | 'merged' | 'draft'
 export type IssueState = 'open' | 'closed'
 export type CheckStatus = 'pending' | 'success' | 'failure' | 'neutral'
@@ -62,6 +64,8 @@ export type PRInfo = {
   mergeQueueRequired?: boolean | null
   mergeMethodSettings?: GitHubPRMergeMethodSettings
   mergeStateStatus?: string | null
+  /** Graphite's published stack comment; separate from GitHub-native stack IDs and merge APIs. */
+  graphiteStack?: GraphiteStack
   /** GitHub-registered stack metadata. Absent for ordinary dependent PR chains. */
   stack?: GitHubPRStack
   // Why: check-runs are keyed by the PR head commit, not the mutable branch name.

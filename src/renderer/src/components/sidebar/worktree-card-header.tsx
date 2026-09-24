@@ -15,6 +15,7 @@ import type { WorktreeCardPresentation } from './worktree-card-presentation'
 import { WorktreeCardSshHostControl } from './WorktreeCardSshHostControl'
 import { WorktreeTitleInlineRename } from './WorktreeTitleInlineRename'
 import { WorktreeTagDots } from './WorktreeTags'
+import { GraphiteStackBadge } from './GraphiteStackDetails'
 import type { WorktreeCardController } from './use-worktree-card-controller'
 
 // Why: pinned repo icon and compact inline badge share this chip shell so both repo cues read as the same affordance.
@@ -188,6 +189,7 @@ export function WorktreeCardHeader({
         />
 
         <WorktreeTagDots worktree={worktree} />
+        <GraphiteStackBadge review={prDisplay} ownHover={!newCardStyle} />
 
         {prDisplay && (
           <span

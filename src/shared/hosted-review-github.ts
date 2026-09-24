@@ -18,6 +18,7 @@ export function hostedReviewInfoFromGitHubPRInfo(pr: PRInfo): HostedReviewInfo {
     ...(pr.mergeStateStatus !== undefined ? { mergeStateStatus: pr.mergeStateStatus } : {}),
     ...(pr.headSha ? { headSha: pr.headSha } : {}),
     ...(pr.prRepo ? { githubRepository: pr.prRepo } : {}),
+    ...(pr.graphiteStack ? { graphiteStack: pr.graphiteStack } : {}),
     ...(pr.confirmedContainedHeadOid
       ? { confirmedContainedHeadOid: pr.confirmedContainedHeadOid }
       : {}),

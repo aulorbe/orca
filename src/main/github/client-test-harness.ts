@@ -10,6 +10,7 @@ import { resetMergedPRCommitMembershipCacheForTest } from './merged-pr-commit-me
 import { __resetRepoDefaultBranchCacheForTests } from '../source-control/repo-default-branch'
 import { _resetOriginGitHubApiRepositoryCache } from './github-api-repository'
 import { _resetGitHubPRStackCacheForTests } from './github-pr-stack'
+import { resetGraphiteStackCacheForTests } from './graphite-pr-stack'
 
 // The origin-repository cache is module-level state; reset it so slugs
 // resolved by one test cannot leak into the next.
@@ -53,6 +54,7 @@ export function resetPRForBranchMocks(mocks: GitHubClientMocks): void {
   _resetMergeQueueCacheForTests()
   _resetPRStackSummaryCacheForTests()
   _resetGitHubPRStackCacheForTests()
+  resetGraphiteStackCacheForTests()
   __resetTrackedUpstreamBranchCacheForTests()
   __resetPRConflictSummaryCachesForTests()
   resetMergedPRCommitMembershipCacheForTest()

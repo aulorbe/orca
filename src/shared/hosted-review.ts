@@ -1,3 +1,4 @@
+import type { GraphiteStack } from './github/graphite-stack'
 import type {
   CheckStatus,
   GitHubRepositoryIdentity,
@@ -28,6 +29,8 @@ export function isPositiveHostedReviewNumber(value: unknown): value is number {
 }
 
 export type HostedReviewInfo = {
+  /** Optional GitHub/Graphite metadata; older hosts and other providers omit it. */
+  graphiteStack?: GraphiteStack
   provider: HostedReviewProvider
   number: number
   title: string

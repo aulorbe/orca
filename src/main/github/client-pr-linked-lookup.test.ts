@@ -122,7 +122,11 @@ describe('getPRForBranch', () => {
 
     const pr = await getPRForBranch('/repo-root', 'feature/local-worktree', 99)
 
-    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(3)
+    expect(ghExecFileAsyncMock).toHaveBeenCalledWith(
+      ['api', '--cache', '60s', 'repos/acme/widgets/issues/99/comments?per_page=100'],
+      { cwd: '/repo-root', timeout: 5_000 }
+    )
     expect(gitExecFileAsyncMock).not.toHaveBeenCalled()
     expect(ghExecFileAsyncMock).toHaveBeenCalledWith(
       [
@@ -373,7 +377,7 @@ describe('getPRForBranch', () => {
 
     const pr = await getPRForBranch('/repo-root', 'feature/test', 99)
 
-    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(3)
     expect(pr?.number).toBe(99)
   })
 
@@ -534,7 +538,11 @@ describe('getPRForBranch', () => {
 
     const pr = await getPRForBranch('/repo-root', 'refs/heads/local-created-from-pr', 77)
 
-    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(3)
+    expect(ghExecFileAsyncMock).toHaveBeenCalledWith(
+      ['api', '--cache', '60s', 'repos/acme/widgets/issues/77/comments?per_page=100'],
+      { cwd: '/repo-root', timeout: 5_000 }
+    )
     expect(ghExecFileAsyncMock).toHaveBeenCalledWith(
       [
         'pr',
@@ -665,7 +673,7 @@ describe('getPRForBranch', () => {
     expect(ghExecFileAsyncMock).toHaveBeenNthCalledWith(2, ['api', 'repos/acme/widgets/pulls/99'], {
       cwd: '/repo-root'
     })
-    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    expect(ghExecFileAsyncMock).toHaveBeenCalledTimes(3)
     expect(pr).toMatchObject({
       number: 99,
       state: 'merged',

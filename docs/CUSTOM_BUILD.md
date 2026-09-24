@@ -24,6 +24,10 @@ moved over automatically. Keep critical tasks in the installed app while develop
 stops the dev app and can stop its dev terminals. Its terminals get a scoped CLI automatically;
 you do not need to install a global CLI for this workflow.
 
+Dev has separate macOS notification permissions. Its System Settings entry is **Orca Dev**;
+allow notifications and **Badge application icon** there to receive Dock counts. The count
+reflects unread workspace/tab activity, not every completed agent that you have already read.
+
 ## Build and install
 
 Use Node 24 and a current Corepack that supports the repository's pinned pnpm 12.
@@ -116,6 +120,18 @@ Pinned section behavior.
 Groups are saved locally and do not change statuses or tags. Switching back to another grouping
 option keeps your custom groups for later. This organizes the sidebar; the status board keeps its
 existing columns.
+
+## Graphite stack indicators
+
+GitHub PR cards with a published Graphite stack comment show a small layers icon. Hover the
+icon or card details to see the stack in Graphite’s top-to-base order, with PR numbers and
+full titles. The current PR is highlighted; clicking a row opens it in Graphite.
+
+Detection reads Graphite’s generated conversation comment (among the first 100 comments),
+not branch-name guesses. Missing/unavailable comments do not prove a PR is standalone.
+Titles are fetched in one batch and cached across stack members; failed refreshes can show
+an explicitly marked last-known stack. GitHub-native stack IDs and merge behavior are unchanged.
+This adds backend metadata loading, so an already-running Dev process needs a restart when safe.
 
 ## PR links
 
