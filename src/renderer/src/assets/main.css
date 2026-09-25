@@ -107,6 +107,7 @@
   --color-workspace-status-done: var(--workspace-status-done);
   --color-workspace-status-review: var(--workspace-status-review);
   --color-workspace-status-progress: var(--workspace-status-progress);
+  --color-worktree-unread-accent: var(--worktree-unread-accent);
   --color-tab-group-split-divider: var(--tab-group-split-divider);
   --color-tab-group-split-divider-strong: var(--tab-group-split-divider-strong);
   --color-git-graph-ref: var(--git-graph-ref);
@@ -180,6 +181,7 @@
      it (sidebar, tabs, dashboard, kanban). Orange, not amber: it has to stay
      separable from working-yellow at a glance. */
   --agent-question: var(--color-orange-600);
+  --worktree-unread-accent: var(--color-amber-500);
   /* Legible weight for text/glyphs on a tinted --agent-question surface. */
   --agent-question-text: var(--color-orange-700);
   --status-success: #15803d;
@@ -295,6 +297,7 @@
   --terminal-pane-locate: var(--color-blue-400);
   --ai-action-accent: var(--color-violet-400);
   --agent-question: var(--color-orange-500);
+  --worktree-unread-accent: var(--color-amber-500);
   --agent-question-text: var(--color-orange-300);
   --status-success: #86efac;
   --status-success-background: color-mix(in srgb, var(--status-success) 10%, transparent);
@@ -1293,6 +1296,21 @@ html.native-shell .app-layout {
   border-color: color-mix(in srgb, var(--sidebar-ring) 28%, transparent);
   background: color-mix(in srgb, var(--sidebar-accent) 34%, transparent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--sidebar-ring) 18%, transparent);
+}
+
+/* Unread attention uses the existing amber cue; active selection keeps its own fill. */
+[data-worktree-card-surface][data-worktree-card-unread='true'] {
+  border-inline-start-color: color-mix(in srgb, var(--worktree-unread-accent) 60%, transparent);
+}
+
+[data-worktree-card-surface][data-worktree-card-unread='true']:not([data-worktree-card-active]) {
+  background: color-mix(in srgb, var(--worktree-unread-accent) 10%, var(--worktree-sidebar));
+}
+
+[data-worktree-card-surface][data-worktree-card-unread='true']:not(
+    [data-worktree-card-active]
+  ):hover {
+  background: color-mix(in srgb, var(--worktree-unread-accent) 16%, var(--worktree-sidebar));
 }
 
 /* Why: a sleeping card dims by mixing the theme's own text tokens toward the

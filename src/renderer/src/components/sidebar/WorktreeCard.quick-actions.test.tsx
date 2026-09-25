@@ -148,6 +148,21 @@ describe('WorktreeCard quick actions', () => {
     gitConflictOperationByWorktree = {}
   })
 
+  it('marks unread cards for a subtle highlight and clears it for read or multiselected cards', () => {
+    const render = (isUnread: boolean, isMultiSelected = false) =>
+      renderToStaticMarkup(
+        <WorktreeCard
+          worktree={makeWorktree({ isUnread })}
+          repo={makeRepo()}
+          isActive={false}
+          isMultiSelected={isMultiSelected}
+        />
+      )
+    expect(render(true)).toContain('data-worktree-card-unread="true"')
+    expect(render(false)).not.toContain('data-worktree-card-unread')
+    expect(render(true, true)).not.toContain('data-worktree-card-unread')
+  })
+
   it('marks the unread toggle as a workspace-board-preserving action', () => {
     const markup = renderToStaticMarkup(
       <WorktreeCard worktree={makeWorktree()} repo={makeRepo()} isActive={false} />

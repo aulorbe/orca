@@ -27,6 +27,7 @@ export function WorktreeCardSurface({ card }: { card: WorktreeCardController }):
     lineageChildren,
     lineageChildrenStyle,
     newCardStyle,
+    showUnreadEmphasis,
     titleRenaming,
     isDeleting,
     isRuntimeDisconnected,
@@ -77,6 +78,15 @@ export function WorktreeCardSurface({ card }: { card: WorktreeCardController }):
         isRuntimeDisconnected && !isDeleting && 'opacity-60'
       )}
       data-worktree-card-surface="true"
+      data-worktree-card-unread={
+        showUnreadEmphasis &&
+        !isDeleting &&
+        !titleRenaming &&
+        !isMultiSelected &&
+        !isLineageDropTarget
+          ? 'true'
+          : undefined
+      }
       data-worktree-card-active={
         isActiveSurface && !isLineageDropTarget ? activeSurfaceVariant : undefined
       }
@@ -99,7 +109,7 @@ export function WorktreeCardSurface({ card }: { card: WorktreeCardController }):
           </div>
         </div>
       )}
-      {isSleeping && newCardStyle && !isDeleting ? (
+      {isSleeping && newCardStyle && !isDeleting && !showUnreadEmphasis ? (
         // Why a token mix (see [data-worktree-sleeping-dim] in main.css), not opacity:
         // opacity dims toward whatever is painted behind, so the step shrank on lighter
         // surfaces and vanished on custom backgrounds (#19624). Scoped to the parent row

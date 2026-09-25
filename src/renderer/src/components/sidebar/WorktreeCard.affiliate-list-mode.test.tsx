@@ -301,7 +301,7 @@ describe('WorktreeCard affiliate list mode', () => {
     expect(container.querySelector('[data-worktree-sleeping-dim=""]')).toBeNull()
   })
 
-  it('keeps the unread badge rendered on a dimmed sleeping card', () => {
+  it('keeps unread sleeping cards readable and marked for the attention highlight', () => {
     sleepMocks.sleeping = true
     settings = { experimentalNewWorktreeCardStyle: true }
 
@@ -318,9 +318,8 @@ describe('WorktreeCard affiliate list mode', () => {
       )
     })
 
-    // Why both: the dim marks the row as sleeping while the unread badge still
-    // renders, so an unread sleeping row stays noticeable.
-    expect(container.querySelector('[data-worktree-sleeping-dim=""]')).not.toBeNull()
+    expect(container.querySelector('[data-worktree-sleeping-dim=""]')).toBeNull()
+    expect(container.querySelector('[data-worktree-card-unread="true"]')).not.toBeNull()
     expect(container.querySelector('[data-worktree-unread-alert=""]')).not.toBeNull()
   })
 })
