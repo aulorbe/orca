@@ -28,6 +28,27 @@ Dev has separate macOS notification permissions. Its System Settings entry is **
 allow notifications and **Badge application icon** there to receive Dock counts. The count
 reflects unread workspace/tab activity, not every completed agent that you have already read.
 
+## Updating the fork from upstream
+
+```sh
+npm --prefix "$HOME/Desktop/orca" run sync:upstream
+# Review the merge, update dependencies if needed, and run checks.
+npm --prefix "$HOME/Desktop/orca" run push:fork
+```
+
+`sync:upstream` requires a clean `main` branch, then fetches `upstream` and merges
+`upstream/main` without rebasing or discarding custom commits. Conflicts stop the command for
+manual resolution. It does not push, install dependencies, or restart apps. `push:fork` pushes
+`main` to your fork (`origin`), never to upstream.
+
+## Sidebar unread attention
+
+Unread cards retain their bold title and gain a soft amber wash with a subtle left edge.
+This uses the same unread state as the existing bolding; it does not invent new agent states.
+The wash clears when the card is marked read. Active and multiselected cards retain their
+selection treatment, and unread sleeping cards remain legible instead of being dimmed.
+The existing **Status** card-display option controls these attention cues.
+
 ## Computer Use in Custom Dev (macOS)
 
 The dev launcher installs a separate, user-visible permission helper:
