@@ -188,7 +188,11 @@ export function WorktreeCardHeader({
           onBeginEditingConsumed={affiliateListMode ? undefined : () => setRenamingWorktreeId(null)}
         />
 
-        <WorktreeTagDots worktree={worktree} />
+        <WorktreeTagDots
+          worktree={worktree}
+          onEditorOpenChange={card.detailsHoverControl.setHoverSuppressed}
+          onPointerOverChange={card.detailsHoverControl.setHoverOpenBlocked}
+        />
         <GraphiteStackBadge review={prDisplay} ownHover={!newCardStyle} />
 
         {prDisplay && (

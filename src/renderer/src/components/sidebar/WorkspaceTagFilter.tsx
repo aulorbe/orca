@@ -8,7 +8,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu'
-import { WorkspaceTagDot } from './WorktreeTags'
+import { WorkspaceTagDot } from './WorkspaceTagDot'
 
 export function WorkspaceTagFilter({
   preserveWorkspaceBoardOpen = false
