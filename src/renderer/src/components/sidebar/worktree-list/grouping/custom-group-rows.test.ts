@@ -69,7 +69,7 @@ describe('custom group rows', () => {
         .filter((row) => row.type === 'item')
         .map((row) => [row.worktree.id, row.sectionKey, row.groupDepth])
     ).toEqual([
-      [other.id, 'custom-group:status/in-progress/ungrouped', 1],
+      [other.id, 'custom-group:status/in-progress/ungrouped', 0],
       [card.id, 'custom-group:status/in-review/frontend', 1]
     ])
     expect(
@@ -81,27 +81,49 @@ describe('custom group rows', () => {
         other.id
       ])
     }
-    expect(
-      rows.some((row) => row.type === 'header' && row.key === 'custom-group:status/todo/ungrouped')
-    ).toBe(true)
+    expect(rows.some((row) => row.type === 'header' && row.label === 'Ungrouped')).toBe(false)
+    expect(rows.some((row) => row.type === 'header' && row.label === 'Infrastructure')).toBe(false)
   })
 
-  it('uses the saved group order, keeps empty groups, and puts unassigned cards last', () => {
+  it('hides empty groups and renders unassigned cards headerless above the groups', () => {
     const state = assignCustomWorkspaceGroup(data, card, 'frontend')
     const rows = buildRows(...argsFor(state))
     expect(
       rows.filter((row) => row.type === 'header').map((row) => [row.label, row.count])
-    ).toEqual([
-      ['Frontend', 1],
-      ['Infrastructure', 0],
-      ['Ungrouped', 1]
-    ])
+    ).toEqual([['Frontend', 1]])
     expect(
-      rows.filter((row) => row.type === 'item').map((row) => [row.worktree.id, row.sectionKey])
+      rows.map((row) =>
+        row.type === 'item' ? [row.worktree.id, row.sectionKey, row.groupDepth] : row.type
+      )
     ).toEqual([
-      [card.id, 'custom-group:frontend'],
-      [other.id, 'custom-group:ungrouped']
+      [other.id, 'custom-group:ungrouped', 0],
+      'header',
+      [card.id, 'custom-group:frontend', 0]
     ])
+  })
+
+  it('shows empty groups in saved order only while a card is dragged', () => {
+    const state = assignCustomWorkspaceGroup(
+      assignCustomWorkspaceGroup(data, card, 'frontend'),
+      other,
+      'frontend'
+    )
+    const args = argsFor(state)
+    args[23] = true
+    expect(
+      buildRows(...args)
+        .filter((row) => row.type === 'header')
+        .map((row) => [row.label, row.count])
+    ).toEqual([
+      ['Ungrouped', 0],
+      ['Frontend', 2],
+      ['Infrastructure', 0]
+    ])
+    const nestedArgs = argsFor({ ...state, byStatus: true })
+    nestedArgs[23] = true
+    expect(
+      buildRows(...nestedArgs).some((row) => row.type === 'header' && row.label === 'Ungrouped')
+    ).toBe(false)
   })
 
   it('collapses a custom group without dropping its header or other cards', () => {

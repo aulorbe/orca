@@ -21,6 +21,8 @@ import type { WorktreeDragSession } from './use-session'
 import { useWorktreePointerDragAutoscroll } from './use-pointer-autoscroll'
 import { useWorktreePointerDragWindowEvents } from './use-pointer-window-events'
 import { flushWorktreePointerDragFrame } from './pointer-flush'
+import { isCustomGroupDrag } from './custom-group-drop'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import { EMPTY_WORKTREE_DRAG_PREVIEW_OFFSETS, type WorktreePointerDrag } from './row-state'
 
 export function useWorktreePointerDrag(args: {
@@ -143,6 +145,9 @@ export function useWorktreePointerDrag(args: {
         previewOffsetsByWorktreeId: EMPTY_WORKTREE_DRAG_PREVIEW_OFFSETS,
         pointerY: drag.currentY
       })
+      if (isCustomGroupDrag(drag)) {
+        useCustomWorkspaceGroups.getState().setDragActive(true)
+      }
       startWorktreePointerAutoscroll()
       scheduleWorktreePointerDragFrame(drag)
     },

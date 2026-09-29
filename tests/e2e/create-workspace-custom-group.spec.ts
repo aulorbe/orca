@@ -26,12 +26,9 @@ for (const source of ['manual', 'PR'] as const) {
     await manager.getByRole('textbox', { name: 'New group', exact: true }).fill('Feature work')
     await manager.getByRole('button', { name: 'Add group', exact: true }).click()
     await manager.getByRole('button', { name: 'Close', exact: true }).click()
-    const groupKey = await page
-      .getByRole('button', { name: 'Feature work', exact: true })
-      .getAttribute('data-custom-group-key')
-    if (!groupKey) {
-      throw new Error('Custom group missing')
-    }
+    const groupHeader = page.getByRole('button', { name: 'Feature work', exact: true })
+    // The group stays hidden until a card is assigned to it.
+    await expect(groupHeader).toHaveCount(0)
 
     const title = source === 'manual' ? 'manual-group-choice' : 'Fix grouped review'
     const url = 'https://github.com/stablyai/orca/pull/4242'
@@ -76,6 +73,11 @@ for (const source of ['manual', 'PR'] as const) {
     await dialog.screenshot({ path: testInfo.outputPath(`create-${source}-group-picker.png`) })
     await dialog.getByRole('button', { name: /^Create (Workspace|Worktree)/i }).click()
     await expect(dialog).toBeHidden()
+    await expect(groupHeader).toBeVisible({ timeout: 20000 })
+    const groupKey = await groupHeader.getAttribute('data-custom-group-key')
+    if (!groupKey) {
+      throw new Error('Custom group missing')
+    }
     const card = page
       .locator('[data-worktree-section-key]')
       .filter({ has: page.locator('[data-worktree-title-inline-rename]', { hasText: title }) })

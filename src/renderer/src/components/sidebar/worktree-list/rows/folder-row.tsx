@@ -1,5 +1,5 @@
 import React from 'react'
-import { CUSTOM_GROUP_KEY_PREFIX } from '../../../../../../shared/custom-workspace-groups'
+import { isNamedCustomGroupSectionKey } from '../../../../../../shared/custom-workspace-groups'
 import { cn } from '@/lib/utils'
 import type { VirtualItem } from '@tanstack/react-virtual'
 import type { AppState } from '@/store/types'
@@ -85,8 +85,7 @@ export function renderFolderWorkspaceVirtualRow(args: {
     experimentalNewWorktreeCardStyle: ctx.newCardStyle,
     isFolderBackedWorkspaceChild:
       ctx.groupBy === 'repo' && row.projectGroup.createdFrom === 'folder-scan',
-    isGrouped:
-      ctx.groupBy !== 'none' || Boolean(row.sectionKey?.startsWith(CUSTOM_GROUP_KEY_PREFIX)),
+    isGrouped: ctx.groupBy !== 'none' || isNamedCustomGroupSectionKey(row.sectionKey),
     groupDepth: row.groupDepth,
     lineageDepth: row.depth
   })

@@ -40,11 +40,18 @@ async function groupKey(page: Page, name: string): Promise<string> {
 
 async function dragCard(page: Page, workspaceId: string, group: string | Locator, cancel = false) {
   const row = worktreeRow(page, workspaceId)
-  await row.locator('[data-worktree-card-surface]').hover()
+  const surface = row.locator('[data-worktree-card-surface]')
+  await surface.hover()
+  const box = await surface.boundingBox()
+  if (!box) {
+    throw new Error(`Card ${workspaceId} has no layout box`)
+  }
   const target =
     typeof group === 'string' ? page.getByRole('button', { name: group, exact: true }) : group
   await page.mouse.down()
   try {
+    // Empty groups (and the top-level Ungrouped target) only render once a drag is active.
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 8, { steps: 4 })
     await target.hover()
     await expect(
       page.locator('[data-worktree-sidebar-drag-preview="true"] [data-worktree-id]').first()
@@ -92,11 +99,13 @@ test('one set of custom groups supports assignment, ordering, rename, collapse, 
   }
   await dialog.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(primary).toHaveAttribute('data-worktree-section-key', 'custom-group:ungrouped')
+  // Empty groups stay hidden, and ungrouped cards render without an Ungrouped header.
+  await expect(page.locator('[data-custom-group-key]')).toHaveCount(0)
 
-  const frontendKey = await groupKey(page, 'Frontend')
-  const infraKey = await groupKey(page, 'Infrastructure')
   await assign(page, primaryId, 'Frontend')
   await assign(page, secondaryId, 'Infrastructure')
+  const frontendKey = await groupKey(page, 'Frontend')
+  const infraKey = await groupKey(page, 'Infrastructure')
   await expect(primary).toHaveAttribute('data-worktree-section-key', frontendKey)
   await expect(secondary).toHaveAttribute('data-worktree-section-key', infraKey)
   await expect(primary).toHaveAttribute('aria-current', 'page')
@@ -114,12 +123,22 @@ test('one set of custom groups supports assignment, ordering, rename, collapse, 
   await page.getByRole('button', { name: 'Reveal active workspace', exact: true }).click()
   await expect(primary.locator('[data-worktree-card-surface]')).toBeVisible()
 
-  await page
-    .getByRole('button', { name: 'Frontend', exact: true })
-    .locator('[data-worktree-title-inline-rename]')
-    .dblclick()
+  // A single click on the title toggles the group; a double-click renames without toggling.
+  const frontendHeader = page.getByRole('button', { name: 'Frontend', exact: true })
+  const frontendTitle = frontendHeader.locator('[data-worktree-title-inline-rename]')
+  await expect(frontendHeader).toHaveAttribute('aria-expanded', 'true')
+  await frontendTitle.click()
+  await expect(frontendHeader).toHaveAttribute('aria-expanded', 'false')
+  await frontendTitle.click()
+  await expect(frontendHeader).toHaveAttribute('aria-expanded', 'true')
+
+  await frontendTitle.dblclick()
   await page.getByRole('textbox', { name: 'Rename group', exact: true }).fill('Frontend renamed')
   await page.getByRole('textbox', { name: 'Rename group', exact: true }).press('Enter')
+  await expect(page.getByRole('button', { name: 'Frontend renamed', exact: true })).toHaveAttribute(
+    'aria-expanded',
+    'true'
+  )
   await page
     .getByRole('button', { name: 'Frontend renamed', exact: true })
     .locator('[data-worktree-title-inline-rename]')
@@ -141,11 +160,7 @@ test('one set of custom groups supports assignment, ordering, rename, collapse, 
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
   await dialog.getByRole('button', { name: 'Move Infrastructure up', exact: true }).click()
   await dialog.getByRole('button', { name: 'Close', exact: true }).click()
-  await expect(page.locator('[data-custom-group-key]')).toHaveText([
-    'Infrastructure',
-    'Web',
-    'Ungrouped'
-  ])
+  await expect(page.locator('[data-custom-group-key]')).toHaveText(['Infrastructure', 'Web'])
   await expect(primary).toHaveAttribute('data-worktree-section-key', frontendKey)
   await page
     .getByRole('listbox', { name: 'Worktrees', exact: true })
@@ -153,11 +168,7 @@ test('one set of custom groups supports assignment, ordering, rename, collapse, 
 
   await page.reload()
   await waitForActiveWorktree(page)
-  await expect(page.locator('[data-custom-group-key]')).toHaveText([
-    'Infrastructure',
-    'Web',
-    'Ungrouped'
-  ])
+  await expect(page.locator('[data-custom-group-key]')).toHaveText(['Infrastructure', 'Web'])
   await expect(primary).toHaveAttribute('data-worktree-section-key', frontendKey)
   await expect(secondary).toHaveAttribute('data-worktree-section-key', infraKey)
   await page.evaluate(async () => {
@@ -248,14 +259,15 @@ test.describe('Status subgroups', () => {
     const front = page
       .locator('[data-custom-group-key^="custom-group:status/in-progress/"]')
       .filter({ hasText: 'Frontend' })
-    const frontKey = await front.getAttribute('data-custom-group-key')
-    if (!frontKey) {
-      throw new Error('Frontend subgroup missing')
+    await expect(front).toHaveCount(0)
+    await dragCard(page, id, front)
+    const frontKey = await card.getAttribute('data-worktree-section-key')
+    if (!frontKey?.startsWith('custom-group:status/in-progress/')) {
+      throw new Error(`Frontend subgroup missing: ${frontKey}`)
     }
     const reviewKey = frontKey.replace('/in-progress/', '/in-review/')
     const reviewFront = page.locator(`[data-custom-group-key="${reviewKey}"]`)
-    await dragCard(page, id, front)
-    await expect(card).toHaveAttribute('data-worktree-section-key', frontKey)
+    await expect(reviewFront).toHaveCount(0)
     await dragCard(page, id, reviewFront, true)
     await expect(card).toHaveAttribute('data-worktree-section-key', frontKey)
     await dragCard(page, id, reviewFront)
@@ -286,7 +298,9 @@ test.describe('Status subgroups', () => {
     await page.getByRole('textbox', { name: 'Rename group', exact: true }).fill('UI')
     await page.getByRole('textbox', { name: 'Rename group', exact: true }).press('Enter')
     await expect(front).toHaveCount(0)
-    await expect(page.locator(`[data-custom-group-key="${frontKey}"]`)).toHaveText('UI')
+    await expect(reviewFront).toHaveText('UI')
+    // The renamed group is empty under In progress, so it stays hidden there.
+    await expect(page.locator(`[data-custom-group-key="${frontKey}"]`)).toHaveCount(0)
     await page
       .getByRole('listbox', { name: 'Worktrees', exact: true })
       .screenshot({ path: testInfo.outputPath('nested-groups-light.png') })

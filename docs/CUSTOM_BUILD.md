@@ -148,9 +148,14 @@ group is applied to the newly created workspace, and is retained for background 
 sequential **Create more** submissions. If the group is deleted while creation is running, the
 workspace is still created and remains ungrouped.
 
-Drag cards between custom group headers (including **Ungrouped**), or choose **Custom group** in
-a card's hover details. Each card belongs to one group. Double-click a custom group title to rename
-it, or right-click its title and choose **Edit**; Ungrouped is fixed.
+Empty custom groups are hidden; they appear only while you drag a card, as drop targets. Cards
+without a group have no **Ungrouped** heading: they sit one level up, above the groups. While
+dragging, a temporary **Ungrouped** target appears at the top when there is no ungrouped card to
+drop onto; under Status, drop on the status heading instead.
+
+Drag cards between custom group headers or onto an ungrouped card, or choose **Custom group** in
+a card's hover details. Each card belongs to one group. Click a custom group title to collapse or
+expand it. Double-click the title to rename it, or right-click it and choose **Edit**.
 
 When deleting a group, choose where its cards go: Ungrouped, another group, or workspace deletion.
 Moving is the default. Workspace deletion uses Orca's existing review/confirmation flow, and the

@@ -132,6 +132,11 @@ export function parseCustomGroupSectionKey(
   }
 }
 
+/** True for a real custom group's section; ungrouped cards render without their own tier. */
+export function isNamedCustomGroupSectionKey(key: string | undefined): boolean {
+  return Boolean(key && parseCustomGroupSectionKey(key)?.groupId)
+}
+
 export function getCustomWorkspaceGroupKey(
   state: CustomWorkspaceGroups,
   workspace: WorkspaceCardIdentity & Pick<Worktree, 'workspaceStatus'>,

@@ -39,6 +39,7 @@ import { orderMainWorktreeFirst } from './section-order'
 /** Everything section emission reads that stays fixed for one buildRows call. */
 export type SectionAppendContext = {
   customGroups?: CustomWorkspaceGroups
+  showEmptyCustomGroups?: boolean
   result: Row[]
   groupBy: WorktreeGroupBy
   collapsedGroups: Set<string>

@@ -7,6 +7,7 @@ import {
 } from '../../../../../../shared/custom-workspace-groups'
 import type { Worktree } from '../../../../../../shared/worktree/types'
 import type { SectionAppendContext } from './group-sections'
+import type { Row } from './row-types'
 import { PROJECT_GROUP_META } from './group-keys'
 import { getLaneHostWorktreeCounts, getLaneHostWorktreeIds } from './host-labels'
 import { appendWorktreeRows, buildFolderWorkspaceRow } from './row-builders'
@@ -26,6 +27,7 @@ export type CustomGroupRowsContext = Pick<
   | 'nestLineage'
   | 'cyclicLineageIds'
   | 'mixedWorktreeHostContextLabels'
+  | 'showEmptyCustomGroups'
 >
 type Bucket = { name: string; items: Worktree[]; folders: RenderableFolderWorkspace[] }
 
@@ -52,47 +54,79 @@ export function appendCustomGroupRows(
     const bucket = id ? (buckets.get(id) ?? ungrouped) : ungrouped
     bucket.folders.push(folder)
   }
+  // Why: ungrouped cards sit one level up, before any sticky group header that could claim them.
+  const ungroupedKey = customGroupChildKey(UNGROUPED_CUSTOM_GROUP_ID, parentKey)
+  const ungroupedDepth = Math.max(0, groupDepth - 1)
+  const ungroupedCount = ungrouped.items.length + ungrouped.folders.length
+  // Why: top-level ungrouped has no parent header to drop on, so expose one while dragging.
+  if (ungroupedCount === 0 && parentKey === null && ctx.showEmptyCustomGroups) {
+    ctx.result.push(buildBucketHeader(ctx, ungroupedKey, ungrouped, groupDepth))
+  }
+  appendBucketRows(ctx, ungrouped, ungroupedKey, ungroupedDepth)
+  buckets.delete(UNGROUPED_CUSTOM_GROUP_ID)
   for (const [id, bucket] of buckets) {
     const count = bucket.items.length + bucket.folders.length
+    // Why: empty groups only matter as drop targets, so they appear just during a drag.
+    if (count === 0 && !ctx.showEmptyCustomGroups) {
+      continue
+    }
     const key = customGroupChildKey(id, parentKey)
-    ctx.result.push({
-      type: 'header',
-      key,
-      label: bucket.name,
-      count,
-      customGroup: true,
-      projectGroupDepth: groupDepth,
-      tone: PROJECT_GROUP_META.tone,
-      icon: PROJECT_GROUP_META.icon,
-      worktreeIds: bucket.items.map((worktree) => worktree.id),
-      hostWorktreeCounts: getLaneHostWorktreeCounts(
-        bucket.items,
-        bucket.folders,
-        ctx.repoMap,
-        ctx.defaultHostId
-      ),
-      hostWorktreeIds: getLaneHostWorktreeIds(
-        bucket.items,
-        bucket.folders,
-        ctx.repoMap,
-        ctx.defaultHostId
-      )
-    })
+    ctx.result.push(buildBucketHeader(ctx, key, bucket, groupDepth))
     if (ctx.collapsedGroups.has(key)) {
       continue
     }
-    appendWorktreeRows(ctx.result, bucket.items, ctx.repoMap, ctx.lineageById, ctx.worktreeMap, {
-      nestLineage: ctx.nestLineage,
-      collapsedGroups: ctx.collapsedGroups,
-      groupDepth,
-      sectionKey: key,
-      hostContextLabelByWorktreeIdentity: ctx.mixedWorktreeHostContextLabels,
-      cyclicLineageIds: ctx.cyclicLineageIds
-    })
-    for (const folder of bucket.folders.sort((a, b) =>
-      compareFolderWorkspacesForDisplay(a.folderWorkspace, b.folderWorkspace)
-    )) {
-      ctx.result.push({ ...buildFolderWorkspaceRow(folder, groupDepth), sectionKey: key })
-    }
+    appendBucketRows(ctx, bucket, key, groupDepth)
+  }
+}
+
+function buildBucketHeader(
+  ctx: CustomGroupRowsContext,
+  key: string,
+  bucket: Bucket,
+  groupDepth: number
+): Row {
+  return {
+    type: 'header',
+    key,
+    label: bucket.name,
+    count: bucket.items.length + bucket.folders.length,
+    customGroup: true,
+    projectGroupDepth: groupDepth,
+    tone: PROJECT_GROUP_META.tone,
+    icon: PROJECT_GROUP_META.icon,
+    worktreeIds: bucket.items.map((worktree) => worktree.id),
+    hostWorktreeCounts: getLaneHostWorktreeCounts(
+      bucket.items,
+      bucket.folders,
+      ctx.repoMap,
+      ctx.defaultHostId
+    ),
+    hostWorktreeIds: getLaneHostWorktreeIds(
+      bucket.items,
+      bucket.folders,
+      ctx.repoMap,
+      ctx.defaultHostId
+    )
+  }
+}
+
+function appendBucketRows(
+  ctx: CustomGroupRowsContext,
+  bucket: Bucket,
+  key: string,
+  groupDepth: number
+): void {
+  appendWorktreeRows(ctx.result, bucket.items, ctx.repoMap, ctx.lineageById, ctx.worktreeMap, {
+    nestLineage: ctx.nestLineage,
+    collapsedGroups: ctx.collapsedGroups,
+    groupDepth,
+    sectionKey: key,
+    hostContextLabelByWorktreeIdentity: ctx.mixedWorktreeHostContextLabels,
+    cyclicLineageIds: ctx.cyclicLineageIds
+  })
+  for (const folder of bucket.folders.sort((a, b) =>
+    compareFolderWorkspacesForDisplay(a.folderWorkspace, b.folderWorkspace)
+  )) {
+    ctx.result.push({ ...buildFolderWorkspaceRow(folder, groupDepth), sectionKey: key })
   }
 }

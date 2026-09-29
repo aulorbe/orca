@@ -18,6 +18,9 @@ type CustomGroupsState = {
   data: CustomWorkspaceGroups
   managerOpen: boolean
   setManagerOpen: (open: boolean) => void
+  /** Transient: a card drag is in progress, so empty groups render as drop targets. */
+  dragActive: boolean
+  setDragActive: (active: boolean) => void
   setEnabled: (enabled: boolean) => void
   setByStatus: (byStatus: boolean) => void
   setParentGroupBy: (parentGroupBy: CustomWorkspaceGroups['parentGroupBy']) => void
@@ -35,6 +38,8 @@ export const useCustomWorkspaceGroups = create<CustomGroupsState>()(
       data: EMPTY_CUSTOM_WORKSPACE_GROUPS,
       managerOpen: false,
       setManagerOpen: (managerOpen) => set({ managerOpen }),
+      dragActive: false,
+      setDragActive: (dragActive) => set({ dragActive }),
       setEnabled: (enabled) => set(({ data }) => ({ data: { ...data, enabled } })),
       setByStatus: (byStatus) =>
         set(({ data }) => ({

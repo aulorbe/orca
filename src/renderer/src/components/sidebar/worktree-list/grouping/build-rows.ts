@@ -76,7 +76,8 @@ export function buildRows(
   hostLabelById?: ReadonlyMap<string, string>,
   defaultHostId: ExecutionHostId = LOCAL_EXECUTION_HOST_ID,
   pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy = getPinnedWorktreeDisplayPolicy(settings),
-  customGroups?: CustomWorkspaceGroups
+  customGroups?: CustomWorkspaceGroups,
+  showEmptyCustomGroups = false
 ): Row[] {
   if (customGroups?.enabled) {
     groupBy = getCustomParentGroupBy(customGroups) ?? 'none'
@@ -171,7 +172,8 @@ export function buildRows(
         worktreeMap,
         nestLineage,
         cyclicLineageIds,
-        mixedWorktreeHostContextLabels
+        mixedWorktreeHostContextLabels,
+        showEmptyCustomGroups
       },
       customGroups,
       naturalWorktrees,
@@ -242,6 +244,7 @@ export function buildRows(
 
   const sectionContext: SectionAppendContext = {
     customGroups: customGroups?.enabled ? customGroups : undefined,
+    showEmptyCustomGroups,
     result,
     groupBy,
     collapsedGroups,

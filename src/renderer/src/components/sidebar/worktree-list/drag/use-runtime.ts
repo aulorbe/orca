@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import { clearCustomGroupDropHighlight } from './custom-group-drop'
 import type React from 'react'
 import type { WorkspaceStatus } from '../../../../../../shared/worktree/types'
@@ -58,6 +59,9 @@ export function useWorktreeDragRuntime(args: {
 
   const cleanupWorktreePointerDrag = useCallback(() => {
     clearCustomGroupDropHighlight()
+    if (useCustomWorkspaceGroups.getState().dragActive) {
+      useCustomWorkspaceGroups.getState().setDragActive(false)
+    }
     const drag = worktreePointerDragRef.current
     cancelWorktreePointerAutoscroll()
     setNativeLineageDropTargetId(null)

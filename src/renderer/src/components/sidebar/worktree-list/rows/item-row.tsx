@@ -1,5 +1,5 @@
 import React from 'react'
-import { CUSTOM_GROUP_KEY_PREFIX } from '../../../../../../shared/custom-workspace-groups'
+import { isNamedCustomGroupSectionKey } from '../../../../../../shared/custom-workspace-groups'
 import { cn } from '@/lib/utils'
 import type { AppState } from '@/store/types'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
@@ -71,7 +71,7 @@ function getWorktreeItemRowGeometry(
   itemRow: WorktreeItemRow,
   nested: boolean
 ): { surfaceInset: number; cardContentIndent: number; lineageChildrenInlineOffset?: number } {
-  const isGrouped = ctx.groupBy !== 'none' || itemRow.sectionKey.startsWith(CUSTOM_GROUP_KEY_PREFIX)
+  const isGrouped = ctx.groupBy !== 'none' || isNamedCustomGroupSectionKey(itemRow.sectionKey)
   const projectGroupId = itemRow.repo?.projectGroupId
   const isFolderBackedRepoChild =
     ctx.groupBy === 'repo' &&

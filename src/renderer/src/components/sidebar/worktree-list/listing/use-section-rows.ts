@@ -73,6 +73,7 @@ export function useSidebarSectionRows(args: SectionRowsArgs) {
   const { repos, worktrees, repoMap, effectiveCollapsedGroups, defaultHostId } = args
   const worktreesByRepo = useAppStore((s) => s.worktreesByRepo)
   const customGroups = useCustomWorkspaceGroups((s) => s.data)
+  const customGroupDragActive = useCustomWorkspaceGroups((s) => s.dragActive)
   const sshTargetLabels = useAppStore((s) => s.sshTargetLabels)
   const sshConnectionStates = useAppStore((s) => s.sshConnectionStates)
   const runtimeEnvironments = useAppStore((s) => s.runtimeEnvironments)
@@ -168,7 +169,8 @@ export function useSidebarSectionRows(args: SectionRowsArgs) {
         hostLabelById,
         defaultHostId,
         args.pinnedDisplayPolicy,
-        customGroups
+        customGroups,
+        customGroupDragActive
       ),
     [
       args.groupBy,
@@ -192,7 +194,8 @@ export function useSidebarSectionRows(args: SectionRowsArgs) {
       pendingCreations,
       hostLabelById,
       args.pinnedDisplayPolicy,
-      customGroups
+      customGroups,
+      customGroupDragActive
     ]
   )
   const orderedHostOptions = useMemo(

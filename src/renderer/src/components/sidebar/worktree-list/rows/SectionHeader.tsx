@@ -1,5 +1,4 @@
 import React from 'react'
-import { ChevronDown } from 'lucide-react'
 import type { VirtualItem } from '@tanstack/react-virtual'
 import { cn } from '@/lib/utils'
 import type { AppState } from '@/store/types'
@@ -38,10 +37,8 @@ import {
   RepoHeaderProjectActionsMenu,
   type RepoHeaderProjectActions
 } from './repo-header-project-actions'
-import {
-  handleRepoHeaderCollapseAffordancePointerDown,
-  shouldIgnoreRepoHeaderToggle
-} from './header-event-guards'
+import { shouldIgnoreRepoHeaderToggle } from './header-event-guards'
+import { HeaderCollapseChevron } from './HeaderCollapseChevron'
 import type { WorktreeSidebarHeaderDrag } from '../drag/use-header-drag'
 import { getWorktreeOptionId } from './option-dom'
 
@@ -342,7 +339,11 @@ export function renderWorktreeSectionHeaderRow(args: {
             <div className="flex min-w-0 items-center gap-1.5">
               <div className="min-w-0 truncate text-[13px] font-semibold leading-none">
                 {row.customGroup ? (
-                  <CustomGroupTitle groupKey={row.key} name={row.label} />
+                  <CustomGroupTitle
+                    groupKey={row.key}
+                    name={row.label}
+                    onToggle={() => ctx.toggleGroupWithScrollAnchor(row.key)}
+                  />
                 ) : (
                   row.label
                 )}
@@ -359,21 +360,10 @@ export function renderWorktreeSectionHeaderRow(args: {
             <CustomSubgroupActions label={row.label} groupBy={ctx.groupBy} />
           ) : null}
           {showHeaderCollapseAffordance ? (
-            <div
-              className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground"
-              data-repo-header-collapse-affordance=""
-              aria-hidden
-              onPointerDown={handleRepoHeaderCollapseAffordancePointerDown}
-              onClick={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                ctx.toggleGroupWithScrollAnchor(row.key)
-              }}
-            >
-              <ChevronDown
-                className={cn('size-3.5 transition-transform', isHeaderCollapsed && '-rotate-90')}
-              />
-            </div>
+            <HeaderCollapseChevron
+              collapsed={isHeaderCollapsed}
+              onToggle={() => ctx.toggleGroupWithScrollAnchor(row.key)}
+            />
           ) : null}
 
           {isProjectGroupHeader && !row.repo && projectGroupIdForHeader ? (
