@@ -31,10 +31,10 @@ export function WorktreeTagDots({
   const state = useWorkspaceTagsStore((s) => s.data)
   const tags = getWorkspaceTags(state, worktree)
   const [hovered, setHovered] = useState(false)
-  const [formFocused, setFormFocused] = useState(false)
+  const [keepOpen, setKeepOpen] = useState(false)
   const [deletePending, setDeletePending] = useState(false)
   // Why: typing a new tag or confirming a delete must survive the pointer drifting off the card.
-  const open = hovered || formFocused || deletePending
+  const open = hovered || keepOpen || deletePending
   useEffect(() => {
     onEditorOpenChange?.(open)
   }, [onEditorOpenChange, open])
@@ -47,7 +47,7 @@ export function WorktreeTagDots({
   const names = tags.map((tag) => tag.name).join(', ')
   const close = () => {
     setHovered(false)
-    setFormFocused(false)
+    setKeepOpen(false)
   }
   return (
     <HoverCard open={open} onOpenChange={setHovered} openDelay={250} closeDelay={150}>
@@ -90,7 +90,7 @@ export function WorktreeTagDots({
         <WorkspaceTagEditor
           worktree={worktree}
           onClose={close}
-          onFormFocusChange={setFormFocused}
+          onKeepOpenChange={setKeepOpen}
           onDeletePendingChange={setDeletePending}
         />
       </HoverCardContent>

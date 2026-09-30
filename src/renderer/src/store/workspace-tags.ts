@@ -4,6 +4,7 @@ import {
   assignWorkspaceTag,
   deleteWorkspaceTag,
   EMPTY_WORKSPACE_TAGS,
+  moveWorkspaceTag,
   normalizeWorkspaceTags,
   saveWorkspaceTag,
   type TaggedWorkspace,
@@ -18,6 +19,7 @@ type WorkspaceTagsState = {
   selectFilter: (tagId: string, selected: boolean) => void
   clearFilter: () => void
   deleteTag: (tagId: string) => void
+  moveTag: (tagId: string, toIndex: number) => void
 }
 
 // Renderer storage is isolated by the application's user-data directory, just like its theme.
@@ -43,7 +45,9 @@ export const useWorkspaceTagsStore = create<WorkspaceTagsState>()(
           }
         })),
       clearFilter: () => set(({ data }) => ({ data: { ...data, filterIds: [] } })),
-      deleteTag: (tagId) => set(({ data }) => ({ data: deleteWorkspaceTag(data, tagId) }))
+      deleteTag: (tagId) => set(({ data }) => ({ data: deleteWorkspaceTag(data, tagId) })),
+      moveTag: (tagId, toIndex) =>
+        set(({ data }) => ({ data: moveWorkspaceTag(data, tagId, toIndex) }))
     }),
     {
       name: 'orca-workspace-tags',

@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest'
 import {
   assignWorkspaceTag,
   deleteWorkspaceTag,
+  moveWorkspaceTag,
   nextWorkspaceTagColor,
   EMPTY_WORKSPACE_TAGS,
   getWorkspaceTags,
   getWorkspaceTagKey,
   normalizeWorkspaceTags,
   saveWorkspaceTag,
+  type WorkspaceTags,
   workspaceMatchesTagFilter
 } from './workspace-tags'
 
@@ -100,5 +102,32 @@ describe('workspace tags', () => {
     expect(getWorkspaceTags(state, workspace)).toEqual([urgent])
     expect(state.filterIds).toEqual(['urgent'])
     expect(normalizeWorkspaceTags(null)).toEqual(EMPTY_WORKSPACE_TAGS)
+  })
+})
+
+describe('moveWorkspaceTag', () => {
+  const base: WorkspaceTags = {
+    ...EMPTY_WORKSPACE_TAGS,
+    definitions: [
+      { id: 'a', name: 'A', color: '#ef4444' },
+      { id: 'b', name: 'B', color: '#3b82f6' },
+      { id: 'c', name: 'C', color: '#eab308' }
+    ],
+    assignments: { card: ['c', 'a'] }
+  }
+  const order = (state: WorkspaceTags) => state.definitions.map((tag) => tag.id)
+
+  it('reorders definitions, which drives card dot order, without touching assignments', () => {
+    const moved = moveWorkspaceTag(base, 'c', 0)
+    expect(order(moved)).toEqual(['c', 'a', 'b'])
+    expect(order(moveWorkspaceTag(base, 'a', 2))).toEqual(['b', 'c', 'a'])
+    expect(moved.assignments).toBe(base.assignments)
+  })
+
+  it('clamps out-of-range targets and ignores unknown or no-op moves', () => {
+    expect(order(moveWorkspaceTag(base, 'a', 99))).toEqual(['b', 'c', 'a'])
+    expect(order(moveWorkspaceTag(base, 'c', -5))).toEqual(['c', 'a', 'b'])
+    expect(moveWorkspaceTag(base, 'missing', 0)).toBe(base)
+    expect(moveWorkspaceTag(base, 'b', 1)).toBe(base)
   })
 })

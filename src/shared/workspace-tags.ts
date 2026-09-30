@@ -134,6 +134,23 @@ export function saveWorkspaceTag(state: WorkspaceTags, tag: WorkspaceTag): Works
   }
 }
 
+/** Moves a tag to `toIndex`; the definitions order drives dots, the editor, and the filter menu. */
+export function moveWorkspaceTag(
+  state: WorkspaceTags,
+  tagId: string,
+  toIndex: number
+): WorkspaceTags {
+  const from = state.definitions.findIndex((tag) => tag.id === tagId)
+  const to = Math.max(0, Math.min(toIndex, state.definitions.length - 1))
+  if (from === -1 || from === to) {
+    return state
+  }
+  const definitions = [...state.definitions]
+  const [moved] = definitions.splice(from, 1)
+  definitions.splice(to, 0, moved!)
+  return { ...state, definitions }
+}
+
 export function deleteWorkspaceTag(state: WorkspaceTags, tagId: string): WorkspaceTags {
   return normalizeWorkspaceTags({
     ...state,

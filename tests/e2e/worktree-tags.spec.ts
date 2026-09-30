@@ -140,3 +140,54 @@ test('colored tag dots, tag filtering, removal, and reload persistence', async (
     await page.getByRole('button', { name: 'Close tags', exact: true }).click()
   }
 })
+
+test('drag tags in the dot hover editor to reorder them everywhere', async ({
+  orcaPage: page
+}, testInfo) => {
+  const id = await waitForActiveWorktree(page)
+  await page.evaluate(async () => {
+    const state = window.__store!.getState()
+    state.setShowSleepingWorkspaces(true)
+    state.setHideDefaultBranchWorkspace(false)
+    await state.updateSettings({ experimentalNewWorktreeCardStyle: true, theme: 'light' })
+  })
+  const card = worktreeRow(page, id)
+  await openTags(page, id)
+  await addTag(page, 'Urgent', '#ef4444')
+  await addTag(page, 'Review', '#3b82f6')
+  await addTag(page, 'Blocked', '#eab308')
+  await page.keyboard.press('Escape')
+  const dotNames = () =>
+    card
+      .locator('[data-worktree-tags] [role="img"]')
+      .evaluateAll((dots) => dots.map((dot) => dot.getAttribute('aria-label')))
+  expect(await dotNames()).toEqual(['Urgent', 'Review', 'Blocked'])
+
+  await card.locator('[data-worktree-tags]').hover()
+  const editor = page.locator('[data-worktree-tag-hover-editor]')
+  await expect(editor).toBeVisible()
+  const grip = editor.getByRole('button', { name: 'Reorder tag Blocked', exact: true })
+  const target = editor.locator('[data-workspace-tag-row]').first()
+  const from = (await grip.boundingBox())!
+  const to = (await target.boundingBox())!
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(from.x + from.width / 2, from.y - 6, { steps: 4 })
+  await page.mouse.move(from.x + from.width / 2, to.y + 2, { steps: 12 })
+  await page.mouse.up()
+  // The hover editor stays open through the drag, and every surface follows the new order.
+  await expect(editor).toBeVisible()
+  await expect.poll(dotNames).toEqual(['Blocked', 'Urgent', 'Review'])
+  await expect
+    .poll(() =>
+      editor
+        .getByRole('checkbox')
+        .evaluateAll((boxes) => boxes.map((box) => box.getAttribute('aria-label')))
+    )
+    .toEqual(['Blocked', 'Urgent', 'Review'])
+  await editor.screenshot({ path: testInfo.outputPath('tag-reorder-editor.png') })
+
+  await page.reload()
+  await waitForActiveWorktree(page)
+  await expect.poll(dotNames).toEqual(['Blocked', 'Urgent', 'Review'])
+})

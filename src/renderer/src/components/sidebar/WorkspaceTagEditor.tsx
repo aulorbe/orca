@@ -1,6 +1,7 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { useWorkspaceTagsStore } from '@/store/workspace-tags'
+import { createBrowserUuid } from '@/lib/browser-uuid'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ColorPicker } from '@/components/ui/color-picker'
@@ -22,22 +23,31 @@ import {
   type WorkspaceTag
 } from '../../../../shared/workspace-tags'
 import { WorkspaceTagDot } from './WorkspaceTagDot'
+import { SortableWorkspaceTagList } from './SortableWorkspaceTagList'
 
 export function WorkspaceTagEditor({
   worktree,
   onClose,
   onDeletePendingChange,
-  onFormFocusChange
+  onKeepOpenChange
 }: {
   worktree: TaggedWorkspace
   onClose: () => void
   onDeletePendingChange?: (pending: boolean) => void
-  onFormFocusChange?: (focused: boolean) => void
+  /** True while typing a new tag or dragging to reorder, so hover surfaces stay open. */
+  onKeepOpenChange?: (keepOpen: boolean) => void
 }) {
   const state = useWorkspaceTagsStore((s) => s.data)
   const addTag = useWorkspaceTagsStore((s) => s.addTag)
   const assignTag = useWorkspaceTagsStore((s) => s.assignTag)
   const deleteTag = useWorkspaceTagsStore((s) => s.deleteTag)
+  const moveTag = useWorkspaceTagsStore((s) => s.moveTag)
+  const [formFocused, setFormFocused] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const keepOpen = formFocused || dragging
+  useEffect(() => {
+    onKeepOpenChange?.(keepOpen)
+  }, [keepOpen, onKeepOpenChange])
   const selectedIds = getWorkspaceTagIds(state, worktree)
   const inputRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState('')
@@ -74,43 +84,48 @@ export function WorkspaceTagEditor({
         </div>
         {state.definitions.length > 0 && (
           <div className="scrollbar-sleek max-h-48 space-y-2 overflow-y-auto">
-            {state.definitions.map((tag) => (
-              <div key={tag.id} className="flex items-center gap-2">
-                <Label className="min-w-0 flex-1">
-                  <Checkbox
-                    aria-label={tag.name}
-                    checked={selectedIds.includes(tag.id)}
-                    onCheckedChange={(checked) =>
-                      run(() => assignTag(worktree, tag.id, checked === true))
-                    }
-                  />
-                  <WorkspaceTagDot tag={tag} />
-                  <span className="min-w-0 truncate">{tag.name}</span>
-                </Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  aria-label={`Delete tag ${tag.name}`}
-                  onClick={() => {
-                    setError(null)
-                    setPendingDelete(tag)
-                  }}
-                >
-                  <X />
-                </Button>
-              </div>
-            ))}
+            <SortableWorkspaceTagList
+              tags={state.definitions}
+              onMove={(tagId, toIndex) => run(() => moveTag(tagId, toIndex))}
+              onDraggingChange={setDragging}
+              renderRow={(tag) => (
+                <>
+                  <Label className="min-w-0 flex-1">
+                    <Checkbox
+                      aria-label={tag.name}
+                      checked={selectedIds.includes(tag.id)}
+                      onCheckedChange={(checked) =>
+                        run(() => assignTag(worktree, tag.id, checked === true))
+                      }
+                    />
+                    <WorkspaceTagDot tag={tag} />
+                    <span className="min-w-0 truncate">{tag.name}</span>
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label={`Delete tag ${tag.name}`}
+                    onClick={() => {
+                      setError(null)
+                      setPendingDelete(tag)
+                    }}
+                  >
+                    <X />
+                  </Button>
+                </>
+              )}
+            />
           </div>
         )}
         <form
           className="space-y-2"
-          onFocus={() => onFormFocusChange?.(true)}
-          onBlur={() => onFormFocusChange?.(false)}
+          onFocus={() => setFormFocused(true)}
+          onBlur={() => setFormFocused(false)}
           onSubmit={(event) => {
             event.preventDefault()
             run(() => {
-              addTag({ id: crypto.randomUUID(), name, color }, worktree)
+              addTag({ id: createBrowserUuid(), name, color }, worktree)
               setName('')
               setColor(nextWorkspaceTagColor(useWorkspaceTagsStore.getState().data))
               inputRef.current?.focus()
