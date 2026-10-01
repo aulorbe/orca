@@ -6,8 +6,10 @@ import {
   getCustomWorkspaceGroupId,
   getCustomWorkspaceGroupKey,
   moveCustomWorkspaceGroup,
+  placeCustomWorkspaceGroup,
   normalizeCustomWorkspaceGroups,
-  saveCustomWorkspaceGroup
+  saveCustomWorkspaceGroup,
+  type CustomWorkspaceGroups
 } from './custom-workspace-groups'
 
 const frontend = { id: 'frontend', name: 'Frontend' }
@@ -70,5 +72,34 @@ describe('custom workspace groups', () => {
       normalizeCustomWorkspaceGroups({ ...groups(), assignments: { unknown: 'removed' } })
         .assignments
     ).toEqual({})
+  })
+})
+
+describe('placeCustomWorkspaceGroup', () => {
+  const state: CustomWorkspaceGroups = {
+    enabled: true,
+    groups: ['a', 'b', 'c', 'd'].map((id) => ({ id, name: id.toUpperCase() })),
+    assignments: { card: 'b' }
+  }
+  const order = (next: CustomWorkspaceGroups) => next.groups.map((group) => group.id)
+
+  it('places a group before or after a visible anchor, skipping hidden groups in between', () => {
+    expect(order(placeCustomWorkspaceGroup(state, 'd', 'a', 'before'))).toEqual([
+      'd',
+      'a',
+      'b',
+      'c'
+    ])
+    expect(order(placeCustomWorkspaceGroup(state, 'a', 'c', 'after'))).toEqual(['b', 'c', 'a', 'd'])
+    // 'b' and 'c' may be hidden (empty) in the sidebar; dropping 'a' after 'd' still lands last.
+    expect(order(placeCustomWorkspaceGroup(state, 'a', 'd', 'after'))).toEqual(['b', 'c', 'd', 'a'])
+    expect(placeCustomWorkspaceGroup(state, 'd', 'a', 'before').assignments).toBe(state.assignments)
+  })
+
+  it('returns the same state for no-op, self, or unknown moves', () => {
+    expect(placeCustomWorkspaceGroup(state, 'b', 'a', 'after')).toBe(state)
+    expect(placeCustomWorkspaceGroup(state, 'b', 'b', 'before')).toBe(state)
+    expect(placeCustomWorkspaceGroup(state, 'missing', 'a', 'before')).toBe(state)
+    expect(placeCustomWorkspaceGroup(state, 'a', 'missing', 'before')).toBe(state)
   })
 })

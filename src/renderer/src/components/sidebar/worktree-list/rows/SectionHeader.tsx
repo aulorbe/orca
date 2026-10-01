@@ -38,6 +38,7 @@ import { HeaderCollapseChevron } from './HeaderCollapseChevron'
 import type { WorktreeSidebarHeaderDrag } from '../drag/use-header-drag'
 import { getWorktreeOptionId } from './option-dom'
 import { SectionHeaderTitle } from './SectionHeaderTitle'
+import { beginCustomGroupHeaderDrag } from '../drag/custom-group-header-drag'
 
 export type SectionHeaderRowContext = {
   groupBy: WorktreeGroupBy
@@ -242,6 +243,8 @@ export function renderWorktreeSectionHeaderRow(args: {
           // actions use cursor-pointer so … / + never look reorderable.
           'group relative flex h-7 w-full items-center gap-1.5 pr-2 text-left transition-all',
           'data-[custom-group-drop-hover=true]:rounded-md data-[custom-group-drop-hover=true]:bg-worktree-sidebar-accent data-[custom-group-drop-hover=true]:ring-1 data-[custom-group-drop-hover=true]:ring-worktree-sidebar-ring/40',
+          // Why: insertion line for custom group reordering (set by custom-group-header-drag).
+          'data-[custom-group-reorder]:before:absolute data-[custom-group-reorder]:before:inset-x-2 data-[custom-group-reorder]:before:h-0.5 data-[custom-group-reorder]:before:rounded-full data-[custom-group-reorder]:before:bg-worktree-sidebar-ring data-[custom-group-reorder=after]:before:-bottom-px data-[custom-group-reorder=before]:before:-top-px',
           !(isDraggableRepoHeader || isDraggableProjectGroupHeader) && 'cursor-pointer',
           ctx.highlightedRevealRowKey === row.key &&
             'rounded-md bg-worktree-sidebar-accent ring-1 ring-worktree-sidebar-ring/50',
@@ -288,7 +291,9 @@ export function renderWorktreeSectionHeaderRow(args: {
             : isDraggableProjectGroupHeader && projectGroupIdForHeader
               ? (event) =>
                   headerDrag.projectGroupDrag.onHandlePointerDown(event, projectGroupIdForHeader)
-              : undefined
+              : row.customGroup
+                ? (event) => beginCustomGroupHeaderDrag(event, row.key)
+                : undefined
         }
         onClick={(event) => {
           if (shouldIgnoreRepoHeaderToggle(event)) {

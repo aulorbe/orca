@@ -7,6 +7,7 @@ import {
   deleteCustomWorkspaceGroup,
   EMPTY_CUSTOM_WORKSPACE_GROUPS,
   moveCustomWorkspaceGroup,
+  placeCustomWorkspaceGroup,
   normalizeCustomWorkspaceGroups,
   saveCustomWorkspaceGroup,
   type CustomWorkspaceGroup,
@@ -29,6 +30,7 @@ type CustomGroupsState = {
   clearDeletedAssignments: (groupId: string, workspaces: readonly WorkspaceCardIdentity[]) => void
   assignWorkspaces: (workspaces: readonly WorkspaceCardIdentity[], groupId: string | null) => void
   moveGroup: (id: string, direction: -1 | 1) => void
+  placeGroup: (id: string, anchorId: string, position: 'before' | 'after') => void
   assignGroup: (workspace: WorkspaceCardIdentity, groupId: string | null) => void
 }
 
@@ -58,6 +60,8 @@ export const useCustomWorkspaceGroups = create<CustomGroupsState>()(
         set(({ data }) => ({ data: assignCustomWorkspacesGroup(data, workspaces, groupId) })),
       moveGroup: (id, direction) =>
         set(({ data }) => ({ data: moveCustomWorkspaceGroup(data, id, direction) })),
+      placeGroup: (id, anchorId, position) =>
+        set(({ data }) => ({ data: placeCustomWorkspaceGroup(data, id, anchorId, position) })),
       assignGroup: (workspace, groupId) =>
         set(({ data }) => ({ data: assignCustomWorkspaceGroup(data, workspace, groupId) }))
     }),

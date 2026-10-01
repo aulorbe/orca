@@ -16,6 +16,11 @@ type WorkspaceTagsState = {
   data: WorkspaceTags
   addTag: (tag: WorkspaceTag, workspace: TaggedWorkspace) => void
   assignTag: (workspace: TaggedWorkspace, tagId: string, selected: boolean) => void
+  assignTagToMany: (
+    workspaces: readonly TaggedWorkspace[],
+    tagId: string,
+    selected: boolean
+  ) => void
   selectFilter: (tagId: string, selected: boolean) => void
   clearFilter: () => void
   deleteTag: (tagId: string) => void
@@ -34,6 +39,14 @@ export const useWorkspaceTagsStore = create<WorkspaceTagsState>()(
       assignTag: (workspace, tagId, selected) =>
         set((state) => ({
           data: assignWorkspaceTag(state.data, workspace, tagId, selected)
+        })),
+      // Why: one store write for a multi-card context menu action.
+      assignTagToMany: (workspaces, tagId, selected) =>
+        set((state) => ({
+          data: workspaces.reduce(
+            (data, workspace) => assignWorkspaceTag(data, workspace, tagId, selected),
+            state.data
+          )
         })),
       selectFilter: (tagId, selected) =>
         set(({ data }) => ({

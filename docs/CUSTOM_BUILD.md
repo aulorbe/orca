@@ -112,6 +112,8 @@ from just that card. The title shows only colored dots for tags already applied�
 Once a card has tags, hover its dots to open the same editor directly, without the details card.
 Drag a tag's grip (⋮⋮) in the editor to reorder tags; the order applies to every card's dots,
 the editor, and the tag filter.
+Right-click a card (or a multi-selection) and use **Tags** to add or remove tags without opening
+the editor; with several cards selected, a partial tag shows how many have it (e.g. 2/3).
 
 Use the **×** beside a tag in the editor to delete it from all cards. A confirmation dialog
 appears before deletion. Different tags cannot use the same hex color.
@@ -157,7 +159,8 @@ without a group have no **Ungrouped** heading: they sit one level up, above the 
 dragging, a temporary **Ungrouped** target appears at the top when there is no ungrouped card to
 drop onto; under Status, drop on the status heading instead.
 
-Drag cards between custom group headers or onto an ungrouped card, or choose **Custom group** in
+Drag a custom group's heading up or down to reorder groups; the order is shared, so it applies
+under every status/section and in **Manage custom groups**. Drag cards between custom group headers or onto an ungrouped card, or choose **Custom group** in
 a card's hover details. Each card belongs to one group. Click a custom group title to collapse or
 expand it. Double-click the title to rename it, or right-click it and choose **Edit**.
 

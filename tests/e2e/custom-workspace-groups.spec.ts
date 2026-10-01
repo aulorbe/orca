@@ -66,6 +66,73 @@ async function dragCard(page: Page, workspaceId: string, group: string | Locator
   await expect(page.locator('[data-custom-group-drop-hover]')).toHaveCount(0)
 }
 
+test('drag custom group headers to reorder the shared group order', async ({
+  orcaPage: page
+}, testInfo) => {
+  const primaryId = await waitForActiveWorktree(page)
+  const secondaryId = await page.evaluate(async (primaryId) => {
+    const state = window.__store!.getState()
+    state.setShowSleepingWorkspaces(true)
+    state.setHideDefaultBranchWorkspace(false)
+    await state.updateSettings({ experimentalNewWorktreeCardStyle: true, theme: 'light' })
+    const secondary = Object.values(state.worktreesByRepo)
+      .flat()
+      .find((workspace) => workspace.id !== primaryId)
+    if (!secondary) {
+      throw new Error('Second workspace missing')
+    }
+    return secondary.id
+  }, primaryId)
+  await options(page)
+  await page.getByText('Custom', { exact: true }).click()
+  await page.getByRole('menuitem', { name: /^Manage custom groups/ }).click()
+  const dialog = page.getByRole('dialog', { name: 'Custom groups', exact: true })
+  for (const name of ['Frontend', 'Infrastructure']) {
+    await dialog.getByRole('textbox', { name: 'New group', exact: true }).fill(name)
+    await dialog.getByRole('button', { name: 'Add group', exact: true }).click()
+  }
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+  await assign(page, primaryId, 'Frontend')
+  await assign(page, secondaryId, 'Infrastructure')
+  const headers = page.locator('[data-custom-group-key]')
+  await expect(headers).toHaveText(['Frontend', 'Infrastructure'])
+
+  const frontend = page.getByRole('button', { name: 'Frontend', exact: true })
+  const infra = page.getByRole('button', { name: 'Infrastructure', exact: true })
+  const from = (await infra.boundingBox())!
+  const to = (await frontend.boundingBox())!
+  await page.mouse.move(from.x + 40, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(from.x + 40, from.y + from.height / 2 - 8, { steps: 3 })
+  await page.mouse.move(to.x + 40, to.y + 3, { steps: 10 })
+  await expect(frontend).toHaveAttribute('data-custom-group-reorder', 'before')
+  await page.mouse.up()
+  await expect(page.locator('[data-custom-group-reorder]')).toHaveCount(0)
+  await expect(headers).toHaveText(['Infrastructure', 'Frontend'])
+  // The drop must not also toggle the dragged group's collapse state.
+  await expect(infra).toHaveAttribute('aria-expanded', 'true')
+  await expect(worktreeRow(page, primaryId)).toHaveAttribute(
+    'data-worktree-section-key',
+    await frontend.getAttribute('data-custom-group-key').then((key) => key ?? '')
+  )
+  await page
+    .getByRole('listbox', { name: 'Worktrees', exact: true })
+    .screenshot({ path: testInfo.outputPath('custom-group-reorder.png') })
+
+  await page.reload()
+  await waitForActiveWorktree(page)
+  await expect(headers).toHaveText(['Infrastructure', 'Frontend'])
+  const manager = await (async () => {
+    await options(page)
+    await page.getByRole('menuitem', { name: /^Manage custom groups/ }).click()
+    return page.getByRole('dialog', { name: 'Custom groups', exact: true })
+  })()
+  // The manager dialog shows the same shared order.
+  await expect(
+    manager.getByRole('button', { name: 'Move Infrastructure up', exact: true })
+  ).toBeDisabled()
+})
+
 test('one set of custom groups supports assignment, ordering, rename, collapse, reload, and deletion', async ({
   orcaPage: page
 }, testInfo) => {

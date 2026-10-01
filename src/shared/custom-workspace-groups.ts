@@ -252,6 +252,32 @@ export function clearDeletedCustomGroupAssignments(
   }
 }
 
+/**
+ * Moves a group directly before/after another one. Sidebar siblings can skip hidden (empty)
+ * groups, so placement is relative to the visible anchor rather than an absolute index.
+ */
+export function placeCustomWorkspaceGroup(
+  state: CustomWorkspaceGroups,
+  groupId: string,
+  anchorId: string,
+  position: 'before' | 'after'
+): CustomWorkspaceGroups {
+  const moving = state.groups.find((group) => group.id === groupId)
+  if (!moving || groupId === anchorId) {
+    return state
+  }
+  const rest = state.groups.filter((group) => group.id !== groupId)
+  const anchor = rest.findIndex((group) => group.id === anchorId)
+  if (anchor === -1) {
+    return state
+  }
+  const at = position === 'before' ? anchor : anchor + 1
+  const groups = [...rest.slice(0, at), moving, ...rest.slice(at)]
+  return groups.every((group, index) => group.id === state.groups[index]?.id)
+    ? state
+    : { ...state, groups }
+}
+
 export function moveCustomWorkspaceGroup(
   state: CustomWorkspaceGroups,
   groupId: string,

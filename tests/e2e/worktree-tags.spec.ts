@@ -191,3 +191,49 @@ test('drag tags in the dot hover editor to reorder them everywhere', async ({
   await waitForActiveWorktree(page)
   await expect.poll(dotNames).toEqual(['Blocked', 'Urgent', 'Review'])
 })
+
+test('right-click a card to add and remove tags', async ({ orcaPage: page }, testInfo) => {
+  const id = await waitForActiveWorktree(page)
+  await page.evaluate(async () => {
+    const state = window.__store!.getState()
+    state.setShowSleepingWorkspaces(true)
+    state.setHideDefaultBranchWorkspace(false)
+    await state.updateSettings({ experimentalNewWorktreeCardStyle: true, theme: 'light' })
+  })
+  const card = worktreeRow(page, id)
+  await openTags(page, id)
+  await addTag(page, 'Urgent', '#ef4444')
+  await addTag(page, 'Review', '#3b82f6')
+  await page.getByRole('checkbox', { name: 'Urgent', exact: true }).uncheck()
+  await page.getByRole('checkbox', { name: 'Review', exact: true }).uncheck()
+  await page.keyboard.press('Escape')
+  await expect(card.locator('[data-worktree-tags]')).toHaveCount(0)
+
+  const openTagMenu = async () => {
+    await card.locator('[data-worktree-card-surface]').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: 'Tags', exact: true }).hover()
+    const menu = page.locator('[data-worktree-tag-context-menu]')
+    await expect(menu).toBeVisible()
+    return menu
+  }
+  let menu = await openTagMenu()
+  await menu.getByRole('menuitemcheckbox', { name: 'Urgent' }).click()
+  // The submenu stays open so several tags can be toggled in one visit.
+  await menu.getByRole('menuitemcheckbox', { name: 'Review' }).click()
+  await expect(menu.getByRole('menuitemcheckbox', { name: 'Urgent' })).toHaveAttribute(
+    'aria-checked',
+    'true'
+  )
+  await menu.screenshot({ path: testInfo.outputPath('tag-context-menu.png') })
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await expect(card.getByRole('img', { name: 'Urgent', exact: true })).toBeVisible()
+  await expect(card.getByRole('img', { name: 'Review', exact: true })).toBeVisible()
+
+  menu = await openTagMenu()
+  await menu.getByRole('menuitemcheckbox', { name: 'Urgent' }).click()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await expect(card.getByRole('img', { name: 'Urgent', exact: true })).toHaveCount(0)
+  await expect(card.getByRole('img', { name: 'Review', exact: true })).toBeVisible()
+})
