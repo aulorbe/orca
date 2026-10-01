@@ -23,7 +23,7 @@ export const DEFAULT_WORKSPACE_STATUSES = [
     color: 'conductor-progress',
     icon: 'conductor-progress'
   },
-  BLOCKED_WORKSPACE_STATUS,
   { id: 'in-review', label: 'In review', color: 'conductor-review', icon: 'conductor-review' },
+  BLOCKED_WORKSPACE_STATUS,
   { id: 'completed', label: 'Done', color: 'conductor-done', icon: 'conductor-done' }
 ] as const satisfies readonly WorkspaceStatusDefinition[]

@@ -56,7 +56,7 @@ export function CustomGroupTitle({
           <WorktreeTitleInlineRename
             displayName={name}
             inputLabel="Rename group"
-            className="text-[13px] font-semibold"
+            className="text-[13px] font-medium text-foreground/80"
             editingClassName="flex-1"
             beginEditing={beginEditing}
             onBeginEditingConsumed={() => setBeginEditing(false)}

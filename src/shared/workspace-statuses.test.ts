@@ -37,8 +37,8 @@ describe('workspace status visuals', () => {
     expect(cloneDefaultWorkspaceStatuses().map((status) => status.id)).toEqual([
       'todo',
       'in-progress',
-      'blocked',
       'in-review',
+      'blocked',
       'completed'
     ])
     expect(cloneDefaultWorkspaceStatuses()[0]).toMatchObject({ id: 'todo', label: 'Todo' })

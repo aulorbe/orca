@@ -88,8 +88,8 @@ describe('Store', () => {
     expect(store.getUI().workspaceStatuses?.map((status) => status.id)).toEqual([
       'todo',
       'in-progress',
-      'blocked',
       'in-review',
+      'blocked',
       'completed'
     ])
     expect(store.getUI()._workspaceBlockedStatusAdded).toBe(true)
@@ -238,8 +238,8 @@ describe('Store', () => {
     expect(ui.workspaceStatuses?.map((status) => status.id)).toEqual([
       'todo',
       'in-progress',
-      'blocked',
       'in-review',
+      'blocked',
       'completed'
     ])
     expect(ui.workspaceStatuses?.at(-1)?.label).toBe('Done')
@@ -255,8 +255,8 @@ describe('Store', () => {
     expect(persisted.ui.workspaceStatuses?.map((status) => status.id)).toEqual([
       'todo',
       'in-progress',
-      'blocked',
       'in-review',
+      'blocked',
       'completed'
     ])
     expect(persisted.ui.workspaceStatuses?.at(-1)?.label).toBe('Done')
@@ -282,8 +282,8 @@ describe('Store', () => {
     expect(store.getUI().workspaceStatuses?.map((status) => status.id)).toEqual([
       'todo',
       'in-progress',
-      'blocked',
       'in-review',
+      'blocked',
       'completed'
     ])
     expect(store.getUI().workspaceStatuses?.at(-1)?.label).toBe('Done')
@@ -363,8 +363,8 @@ describe('Store', () => {
     expect(store.getUI().workspaceStatuses?.map((status) => status.id)).toEqual([
       'completed',
       'in-review',
-      'in-progress',
       'blocked',
+      'in-progress',
       'todo'
     ])
   })

@@ -33,6 +33,14 @@ export function getProjectGroupHeaderPaddingLeft(depth: number): number {
   )
 }
 
+// Why: parent headers show a 16px icon + 6px gap before their label; subgroups have no icon.
+const CUSTOM_SUBGROUP_LABEL_OFFSET = 16 + 6 - PROJECT_GROUP_HEADER_INDENT
+
+/** Nested custom subgroup titles start under their parent header's label, not its icon. */
+export function getCustomGroupHeaderPaddingLeft(depth: number): number {
+  return getProjectGroupHeaderPaddingLeft(depth) + (depth > 0 ? CUSTOM_SUBGROUP_LABEL_OFFSET : 0)
+}
+
 export function getWorktreeCardContentIndent(args: {
   isGrouped: boolean
   groupDepth: number

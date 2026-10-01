@@ -13,6 +13,7 @@ import { PINNED_GROUP_KEY } from '../grouping/group-keys'
 import type { WorktreeGroupBy } from '../grouping/row-types'
 import {
   getFolderBackedRepoWorktreeCardContentIndent,
+  getCustomGroupHeaderPaddingLeft,
   getFolderBackedRepoWorktreeCardSurfaceInset,
   getLineageChildrenInlineStyle,
   getLineageNestedRowGeometry,
@@ -138,6 +139,11 @@ export function renderWorktreeItemRow(
     ? getLineageChildrenInlineStyle(lineageChildrenInlineOffset ?? LINEAGE_CHILDREN_INLINE_OFFSET)
     : undefined
   const worktreeDragGroupKey = ctx.groupKeyByRowKey.get(itemRow.rowKey)
+  // Why: a faint guide under the subgroup title shows where that subgroup's cards end.
+  const customGroupGuideLeft =
+    !nested && isNamedCustomGroupSectionKey(itemRow.sectionKey)
+      ? getCustomGroupHeaderPaddingLeft(itemRow.groupDepth) + 2
+      : null
   const worktreeIdentity = getWorktreeHostIdentity(itemRow.worktree)
   const isLineageDropTarget =
     ctx.worktreeDragState.draggingWorktreeId &&
@@ -188,6 +194,14 @@ export function renderWorktreeItemRow(
         paddingLeft: surfaceInset > 0 ? `${surfaceInset}px` : undefined
       }}
     >
+      {customGroupGuideLeft !== null ? (
+        <span
+          aria-hidden
+          data-custom-group-guide=""
+          className="pointer-events-none absolute -top-[3px] -bottom-[3px] w-px bg-worktree-sidebar-border"
+          style={{ left: customGroupGuideLeft }}
+        />
+      ) : null}
       <WorktreeCard
         worktree={itemRow.worktree}
         repo={itemRow.repo}

@@ -136,10 +136,12 @@ changes it too; dropping on a status heading puts the card in that status’s Un
 Project and PR sections are automatic, so cards cannot be dragged into another project or PR
 state. Both levels collapse independently. Renaming or deleting a shared group applies everywhere.
 
-Status now shows every configured status, including empty drop targets. Workspace Status is
+Status now shows every configured status, including empty drop targets. Status headings use
+small bold caps in the status's color, with a card count and a divider above each status. Custom
+subgroups have no icon, start under the status label, and show a faint guide line beside their cards. Workspace Status is
 manually assigned and defaults to In progress—it is not the same as GitHub PR state. Use PR
-grouping for review-derived sections. The built-in workflow is **Todo → In progress → Blocked →
-In review → Done**. Blocked is a native status, not a custom group, and is also available on the
+grouping for review-derived sections. The built-in workflow is **Todo → In progress → In review →
+Blocked → Done**. Blocked is a native status, not a custom group, and is also available on the
 workspace board. Existing profiles receive it once on the next app start without resetting
 other status labels or order. This saved-profile migration needs a Dev restart when convenient;
 renderer hot reload alone does not restart the backend.

@@ -18,14 +18,14 @@ it('provides Blocked as a native status without making it the default for new ca
   expect(getWorkspaceStatus({ workspaceStatus: 'blocked' }, statuses)).toBe('blocked')
 })
 
-it('adds Blocked after In progress without replacing customized labels, colors, or order', () => {
+it('adds Blocked after In review (else before Done) without replacing customized labels, colors, or order', () => {
   const authored = [
     { id: 'completed', label: 'Shipped', color: 'blue' },
     { id: 'in-progress', label: 'Building', icon: 'timer' },
     { id: 'todo', label: 'Queue' }
   ]
   const next = addDefaultBlockedWorkspaceStatus(authored)
-  expect(next.map((status) => status.id)).toEqual(['completed', 'in-progress', 'blocked', 'todo'])
+  expect(next.map((status) => status.id)).toEqual(['blocked', 'completed', 'in-progress', 'todo'])
   expect(next.filter((status) => status.id !== 'blocked')).toEqual(authored)
   expect(authored).toHaveLength(3)
   expect(addDefaultBlockedWorkspaceStatus(next)).toEqual(next)

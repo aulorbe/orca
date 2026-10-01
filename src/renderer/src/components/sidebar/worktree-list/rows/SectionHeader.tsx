@@ -2,10 +2,7 @@ import React from 'react'
 import type { VirtualItem } from '@tanstack/react-virtual'
 import { cn } from '@/lib/utils'
 import type { AppState } from '@/store/types'
-import { RepoIconGlyph } from '@/components/repo/repo-icon'
-import { CustomGroupTitle } from '../../CustomGroupTitle'
 import { CustomSubgroupActions } from '../../CustomSubgroupActions'
-import { RepoForkIndicator } from '@/components/repo/repo-fork-indicator'
 import type { FolderWorkspacePathStatus } from '../../../../../../shared/folder-workspace-path-status'
 import { isConfirmedStaleFolderPathStatus } from '../../../../../../shared/folder-workspace-path-status'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
@@ -23,11 +20,10 @@ import { resolveProjectGroupHeaderColor } from '../../project-header-color'
 import { getRepoHeaderCreateState } from '../../repo-header-create-state'
 import { ProjectHeaderActions } from '../../ProjectHeaderActions'
 import {
+  getCustomGroupHeaderPaddingLeft,
   getProjectGroupHeaderPaddingLeft,
   WORKTREE_SECTION_HEADER_PADDING_LEFT
 } from './indentation'
-import { FolderPathStatusIndicator } from './FolderPathStatusIndicator'
-import { RepoScanUnavailableIndicator } from './RepoScanUnavailableIndicator'
 import {
   ProjectGroupCreateWorkspaceButton,
   ProjectGroupHeaderMenu
@@ -41,6 +37,7 @@ import { shouldIgnoreRepoHeaderToggle } from './header-event-guards'
 import { HeaderCollapseChevron } from './HeaderCollapseChevron'
 import type { WorktreeSidebarHeaderDrag } from '../drag/use-header-drag'
 import { getWorktreeOptionId } from './option-dom'
+import { SectionHeaderTitle } from './SectionHeaderTitle'
 
 export type SectionHeaderRowContext = {
   groupBy: WorktreeGroupBy
@@ -194,6 +191,11 @@ export function renderWorktreeSectionHeaderRow(args: {
         'left-0 right-0',
         // Why: drop the inter-group spacer once the header pins so it sits flush at top (see getActiveStickyHeaderIndexForScroll).
         args.hasHeaderTopSpacing && !isActiveStickyHeader && 'pt-1',
+        // Why: a divider above each status marks where one status block (and its subgroups) ends.
+        headerWorkspaceStatus &&
+          args.hasHeaderTopSpacing &&
+          !isActiveStickyHeader &&
+          'pt-2 before:absolute before:inset-x-2 before:top-0 before:h-px before:bg-worktree-sidebar-border',
         isActiveStickyHeader
           ? cn(
               'sticky z-20 bg-worktree-sidebar',
@@ -255,8 +257,9 @@ export function renderWorktreeSectionHeaderRow(args: {
         )}
         style={{
           // Why: non-project headers like "All" are flat-list labels; don't reserve project hierarchy indent.
-          paddingLeft:
-            isRepoHeader || isProjectGroupHeader || row.customGroup
+          paddingLeft: row.customGroup
+            ? getCustomGroupHeaderPaddingLeft(row.projectGroupDepth ?? 0)
+            : isRepoHeader || isProjectGroupHeader
               ? getProjectGroupHeaderPaddingLeft(row.projectGroupDepth ?? 0)
               : WORKTREE_SECTION_HEADER_PADDING_LEFT
         }}
@@ -315,44 +318,14 @@ export function renderWorktreeSectionHeaderRow(args: {
               'cursor-grab active:cursor-grabbing'
           )}
         >
-          {row.icon ? (
-            <div
-              className={cn(
-                'flex size-4 shrink-0 items-center justify-center rounded-[4px]',
-                repoHeaderColor ? 'text-muted-foreground' : row.tone
-              )}
-            >
-              {row.repo ? (
-                <RepoIconGlyph
-                  repoIcon={row.repo.repoIcon}
-                  color={repoHeaderColor}
-                  className="size-4"
-                  iconClassName="size-3.5"
-                />
-              ) : (
-                <row.icon className="size-3" />
-              )}
-            </div>
-          ) : null}
-
-          <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <div className="min-w-0 truncate text-[13px] font-semibold leading-none">
-                {row.customGroup ? (
-                  <CustomGroupTitle
-                    groupKey={row.key}
-                    name={row.label}
-                    onToggle={() => ctx.toggleGroupWithScrollAnchor(row.key)}
-                  />
-                ) : (
-                  row.label
-                )}
-              </div>
-              <RepoForkIndicator upstream={row.repo?.upstream} />
-              <FolderPathStatusIndicator status={projectGroupPathStatus} />
-              {isRepoHeader ? <RepoScanUnavailableIndicator repo={row.repo!} /> : null}
-            </div>
-          </div>
+          <SectionHeaderTitle
+            row={row}
+            isStatusHeader={headerWorkspaceStatus !== null}
+            isRepoHeader={isRepoHeader}
+            repoHeaderColor={repoHeaderColor}
+            projectGroupPathStatus={projectGroupPathStatus}
+            onToggle={() => ctx.toggleGroupWithScrollAnchor(row.key)}
+          />
         </div>
 
         <ProjectHeaderActions>
