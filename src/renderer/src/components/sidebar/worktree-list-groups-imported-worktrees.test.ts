@@ -275,7 +275,8 @@ describe('buildRows with pinned worktrees', () => {
       ])
     )
 
-    expect(rows).toMatchObject([
+    // Why (fork): empty status lanes follow Pinned as drop targets.
+    expect(rows.slice(0, 3)).toMatchObject([
       { type: 'header', key: PINNED_GROUP_KEY, count: 3 },
       { type: 'imported-worktrees-card', placement: 'pinned-fallback', repo: { id: repo.id } },
       { type: 'imported-worktrees-card', placement: 'pinned-fallback', repo: { id: repoTwo.id } }

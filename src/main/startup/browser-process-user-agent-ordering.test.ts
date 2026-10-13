@@ -29,6 +29,8 @@ const mocks = vi.hoisted(() => {
       return false
     }),
     whenReady: vi.fn(() => Promise.resolve()),
+    // Why (fork): preflight reads the app name to detect the Custom build.
+    getName: vi.fn(() => 'Orca'),
     setName: vi.fn((name: string) => {
       events.push(`set-name:${name}`)
     })

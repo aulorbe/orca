@@ -1,6 +1,7 @@
 import { FolderOpen } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
 
 export function ComputerUsePermissionApp({ appPath }: { appPath: string | null }) {
   if (!appPath) {
@@ -24,7 +25,10 @@ export function ComputerUsePermissionApp({ appPath }: { appPath: string | null }
         size="sm"
         onClick={async () => {
           try {
-            const result = await window.api.shell.openInFileManager(appPath)
+            const result = await window.api.shell.openInFileManager(
+              appPath,
+              LOCAL_EXECUTION_HOST_ID
+            )
             if (!result.ok) {
               throw new Error('Open Finder and use Go → Go to Folder with the app path above.')
             }

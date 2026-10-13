@@ -56,9 +56,11 @@ for (const [groupBy, sectionKey, pinned] of [
         expect(result.filter((row) => row.type === 'item').map((row) => row.worktree.id)).toEqual([
           'remote'
         ])
-        expect(result.filter((row) => row.type === 'header').map((row) => row.collapseKey)).toEqual(
-          [sectionKey, `${sectionKey}:host:${hostId}`]
-        )
+        // Why (fork): empty status lanes stay visible as drop targets, so scope to this section.
+        expect(sectionHeaderKeys(result, sectionKey)).toEqual([
+          sectionKey,
+          `${sectionKey}:host:${hostId}`
+        ])
       })
 
       it('keeps local pins visible while remote pins are collapsed', () => {
@@ -78,12 +80,21 @@ for (const [groupBy, sectionKey, pinned] of [
           collapsedGroups: new Set([`${sectionKey}:host:${hostId}`])
         })
         expect(result.filter((row) => row.type === 'item')).toEqual([])
-        expect(result.filter((row) => row.type === 'header').map((row) => row.collapseKey)).toEqual(
-          [`${sectionKey}:host:${hostId}`]
-        )
+        // Why (fork): empty status lanes stay visible as drop targets, so scope to this section.
+        expect(sectionHeaderKeys(result, sectionKey)).toEqual([`${sectionKey}:host:${hostId}`])
       })
     })
   }
+}
+
+function sectionHeaderKeys(
+  rows: readonly { type: string; collapseKey?: string }[],
+  sectionKey: string
+) {
+  return rows
+    .filter((row) => row.type === 'header')
+    .map((row) => row.collapseKey)
+    .filter((key) => key?.startsWith(sectionKey))
 }
 
 it('defers only lane collapse and retains unrelated project/lineage collapse', () => {

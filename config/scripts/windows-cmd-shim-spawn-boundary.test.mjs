@@ -32,6 +32,8 @@ const WINDOWS_SHIM_SPAWN_ALLOWLIST = [
   'config/scripts/live-remote-freeze-rpc.mjs',
   'config/scripts/pty-transcript-secret-scan.test.mjs',
   'config/scripts/remote-agent-session-authority-repro.mjs',
+  // Fork: points ORCA_CLI_COMMAND at the installed orca.cmd; never spawns it.
+  'config/scripts/run-custom-dev.mjs',
   // Platform-local build paths; the win32 branch is dead code on both.
   'config/scripts/build-mac-local.mjs',
   'config/scripts/build-linux-local.mjs',
