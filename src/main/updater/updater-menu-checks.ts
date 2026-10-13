@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { isCustomBuild } from '../../shared/custom-build'
+import { isMacInstallRequested } from '../updater-mac-install'
 import type { UpdateCheckOptions } from '../../shared/update-status-types'
 import type { ReleaseChannel } from '../../shared/release-channel'
 import { UpdaterScheduling } from './updater-scheduling'
@@ -14,6 +15,13 @@ export abstract class UpdaterMenuChecks extends UpdaterScheduling {
         message: 'Orca Custom uses manual updates. Rebuild and install from your fork.',
         retryable: false
       })
+      return
+    }
+    if (
+      this.pendingQuitAndInstallTimer ||
+      this.quitAndInstallInProgress ||
+      isMacInstallRequested()
+    ) {
       return
     }
     if (!app.isPackaged || is.dev) {
@@ -69,6 +77,13 @@ export abstract class UpdaterMenuChecks extends UpdaterScheduling {
     const attemptId = this.beginUpdateCheckAttempt()
     const autoUpdater = this.getAutoUpdater()
     const launch = (): Promise<unknown> | undefined => {
+      if (
+        this.pendingQuitAndInstallTimer ||
+        this.quitAndInstallInProgress ||
+        isMacInstallRequested()
+      ) {
+        return undefined
+      }
       if (!this.isActiveUpdateCheckAttempt(attemptId)) {
         return undefined
       }
@@ -83,7 +98,10 @@ export abstract class UpdaterMenuChecks extends UpdaterScheduling {
         this.userInitiatedCheck = false
         this.finishActiveUpdateCheckAttempt()
         this.recordCompletedUpdateCheck()
-        this.sendSettledCheckStatus({ state: 'not-available', userInitiated: true })
+        this.sendSettledCheckStatus({
+          state: 'not-available',
+          userInitiated: true
+        })
         return false
       }
       return launch()

@@ -27,6 +27,7 @@ import { WorktreeCardDisplayMenuSection } from './WorktreeCardDisplayMenuSection
 import { translate } from '@/i18n/i18n'
 import { SidebarGroupByToggle } from './SidebarGroupByToggle'
 import { WorkspaceTagFilter } from './WorkspaceTagFilter'
+import { formatActiveFilterLabel } from './options-filter-count-badge'
 
 export function useWorkspaceOptionsFilterBadge(): {
   hasAnyFilter: boolean
@@ -88,7 +89,7 @@ export function useWorkspaceOptionsFilterBadge(): {
   return {
     hasAnyFilter,
     activeFilterCount,
-    activeFilterLabel: `${activeFilterCount} ${activeFilterCount === 1 ? 'filter' : 'filters'}`
+    activeFilterLabel: formatActiveFilterLabel(activeFilterCount)
   }
 }
 
