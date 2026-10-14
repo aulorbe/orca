@@ -10,6 +10,7 @@ import {
 import { useWorkspaceTagsStore } from '@/store/workspace-tags'
 import { getWorkspaceTagIds, type TaggedWorkspace } from '../../../../shared/workspace-tags'
 import { WorkspaceTagDot } from './WorkspaceTagDot'
+import { translate } from '@/i18n/i18n'
 
 /** Context-menu tag toggles; with several cards selected, a tag is checked only if all have it. */
 export function WorktreeTagMenuItems({
@@ -48,7 +49,11 @@ export function WorktreeTagMenuItems({
                   try {
                     assignTagToMany(workspaces, tag.id, !checked)
                   } catch (cause) {
-                    toast.error(cause instanceof Error ? cause.message : 'Could not update tags.')
+                    toast.error(
+                      cause instanceof Error
+                        ? cause.message
+                        : translate('custom.tags.updateFailed', 'Could not update tags.')
+                    )
                   }
                 }}
               >

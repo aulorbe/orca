@@ -51,6 +51,14 @@ export function getDefaultUserDataPath(
   if (process.env.ORCA_USER_DATA_PATH) {
     return process.env.ORCA_USER_DATA_PATH
   }
+  return getPlatformUserDataPath(platform, homeDir)
+}
+
+/** The packaged app's own default profile, ignoring any CLI override. */
+export function getPlatformUserDataPath(
+  platform: NodeJS.Platform = process.platform,
+  homeDir = homedir()
+): string {
   const profileName = isCustomBuild() ? CUSTOM_APP_IDENTITY.name : 'orca'
   if (platform === 'darwin') {
     return join(homeDir, 'Library', 'Application Support', profileName)

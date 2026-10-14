@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => {
   const app = {
     isPackaged: false,
     exit: vi.fn(),
+    // Real `app` always carries this; preflight reads it to decide the Linux keyring backend.
+    commandLine: { hasSwitch: vi.fn(() => false), appendSwitch: vi.fn() },
     getVersion: vi.fn(() => '1.0.0'),
     getPath: vi.fn(() => '/canonical-user-data'),
     get userAgentFallback(): string {
@@ -27,6 +29,8 @@ const mocks = vi.hoisted(() => {
       return false
     }),
     whenReady: vi.fn(() => Promise.resolve()),
+    // Why (fork): preflight reads the app name to detect the Custom build.
+    getName: vi.fn(() => 'Orca'),
     setName: vi.fn((name: string) => {
       events.push(`set-name:${name}`)
     })
@@ -42,7 +46,8 @@ const mocks = vi.hoisted(() => {
     afterIdentity: vi.fn((): void => {
       throw new Error('preflight-test-stop')
     }),
-    recoverMoves: vi.fn()
+    recoverMoves: vi.fn(),
+    profileLock: vi.fn((): { state: string; message?: string } => ({ state: 'unavailable' }))
   }
 })
 
@@ -90,14 +95,19 @@ vi.mock('../updater', () => ({
   installRemoteServerUpdate: vi.fn(),
   isQuittingForUpdate: () => false
 }))
-vi.mock('./dev-instance-identity', () => ({
-  getDevInstanceIdentity: () => ({
+vi.mock('./dev-instance-identity', () => {
+  const identity = () => ({
     isDev: true,
     appName: 'Orca Development',
     appUserModelId: 'com.orca.development'
-  }),
-  shouldApplyPreReadyAppName: () => true
-}))
+  })
+  // Why (fork): preflight resolves the identity through the Custom-build-aware wrapper.
+  return {
+    getDevInstanceIdentity: identity,
+    resolveDevInstanceIdentity: identity,
+    shouldApplyPreReadyAppName: () => true
+  }
+})
 vi.mock('./renderer-heap-headroom')
 vi.mock('./startup-diagnostics', () => ({
   isStartupDiagnosticsEnabled: () => false,
@@ -112,6 +122,9 @@ vi.mock('../server/serve-stdout-boundary')
 vi.mock('./serve-desktop-activation', () => ({
   createServeDesktopActivationGate: () => ({})
 }))
+vi.mock('./desktop-profile-instance-lock', () => ({
+  acquireDesktopProfileInstanceLock: mocks.profileLock
+}))
 vi.mock('./single-instance-lock', () => ({
   shouldBypassSingleInstanceLock: () => false,
   shouldSkipSingleInstanceLock: () => false,
@@ -121,7 +134,7 @@ vi.mock('./single-instance-lock', () => ({
   },
   logSingleInstanceLockBypass: vi.fn(),
   logSingleInstanceLockFailure: vi.fn(),
-  SINGLE_INSTANCE_ALREADY_RUNNING_EXIT_CODE: 1
+  SINGLE_INSTANCE_ALREADY_RUNNING_EXIT_CODE: 3
 }))
 vi.mock('../../shared/app-environment', () => ({ setAppEnvironment: vi.fn() }))
 vi.mock('../host/electron-app-environment', () => ({ ElectronAppEnvironment: class {} }))
@@ -181,7 +194,7 @@ vi.mock('../crash-reporting/main-process-lifecycle-identity')
 vi.mock('./ensure-virtual-display', () => ({
   ensureVirtualDisplayForHeadlessServe: vi.fn(),
   hasUsableLinuxDisplay: () => true,
-  MISSING_LINUX_DISPLAY_MESSAGE: 'missing display'
+  missingLinuxDisplayMessage: () => 'missing display'
 }))
 vi.mock('./gpu-lifecycle')
 vi.mock('./main-process-state', () => ({ mainProcessState: {} }))
@@ -225,6 +238,33 @@ describe('browser process user-agent startup ordering', () => {
     }
   })
 
+  it('explains an orcad holding the profile instead of exiting silently', async () => {
+    const { runMainProcessPreflight } = await import('./main-process-preflight')
+    const platform = vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    mocks.backgroundLaunch.mockReturnValueOnce(false)
+    mocks.profileLock.mockReturnValueOnce({ state: 'held', message: 'Another orcad (pid 7)' })
+    mocks.app.exit.mockClear()
+    mocks.events.length = 0
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      expect(
+        runMainProcessPreflight({ focusExistingWindow: vi.fn(), requestDesktopActivation: vi.fn() })
+      ).toBe(false)
+      expect(mocks.showErrorBox).toHaveBeenCalledWith(
+        'Orca could not start',
+        'Another orcad (pid 7)'
+      )
+      expect(mocks.app.exit.mock.calls).toEqual([[3]])
+      expect(mocks.events).not.toContain('admission:/canonical-user-data')
+    } finally {
+      error.mockRestore()
+      platform.mockRestore()
+      mocks.showErrorBox.mockClear()
+      mocks.app.exit.mockClear()
+      mocks.events.length = 0
+    }
+  })
+
   it('does not acquire profile admission for a duplicate launch', async () => {
     const { runMainProcessPreflight } = await import('./main-process-preflight')
     mocks.events.length = 0
@@ -234,7 +274,7 @@ describe('browser process user-agent startup ordering', () => {
     ).toBe(false)
     expect(mocks.events).not.toContain('admission:/canonical-user-data')
     expect(mocks.events).not.toContain('read-mode:/canonical-user-data')
-    expect(mocks.app.exit).toHaveBeenCalledWith(1)
+    expect(mocks.app.exit).toHaveBeenCalledWith(3)
     mocks.events.length = 0
   })
 
