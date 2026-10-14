@@ -4,6 +4,7 @@ import { getAllWorktreesFromState } from '@/store/selectors'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import { folderWorkspaceToWorktree } from '../../../shared/folder-workspace-worktree'
 import type { WorkspaceCardIdentity } from '../../../shared/workspace-card-identity'
+import { translate } from '@/i18n/i18n'
 
 export function assignCreatedWorkspaceToGroup(
   created: WorkspaceCardIdentity,
@@ -15,7 +16,12 @@ export function assignCreatedWorkspaceToGroup(
   try {
     const groups = useCustomWorkspaceGroups.getState()
     if (!groups.data.groups.some((group) => group.id === groupId)) {
-      toast.info('The selected group was deleted. The new workspace is ungrouped.')
+      toast.info(
+        translate(
+          'custom.groups.createdGroupDeleted',
+          'The selected group was deleted. The new workspace is ungrouped.'
+        )
+      )
       return
     }
     const state = useAppStore.getState()
@@ -30,13 +36,21 @@ export function assignCreatedWorkspaceToGroup(
     )
     if (matches.length !== 1) {
       toast.warning(
-        'Could not identify the new workspace’s group target. Choose its group in the card’s hover details.'
+        translate(
+          'custom.groups.createdTargetUnknown',
+          'Could not identify the new workspace’s group target. Choose its group in the card’s hover details.'
+        )
       )
       return
     }
     groups.assignGroup(matches[0]!, groupId)
   } catch {
     // Group preferences must never turn a successful create into a retryable workspace failure.
-    toast.warning('Workspace created, but its custom group could not be saved.')
+    toast.warning(
+      translate(
+        'custom.groups.createdSaveFailed',
+        'Workspace created, but its custom group could not be saved.'
+      )
+    )
   }
 }

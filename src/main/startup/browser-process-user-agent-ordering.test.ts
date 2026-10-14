@@ -95,14 +95,19 @@ vi.mock('../updater', () => ({
   installRemoteServerUpdate: vi.fn(),
   isQuittingForUpdate: () => false
 }))
-vi.mock('./dev-instance-identity', () => ({
-  getDevInstanceIdentity: () => ({
+vi.mock('./dev-instance-identity', () => {
+  const identity = () => ({
     isDev: true,
     appName: 'Orca Development',
     appUserModelId: 'com.orca.development'
-  }),
-  shouldApplyPreReadyAppName: () => true
-}))
+  })
+  // Why (fork): preflight resolves the identity through the Custom-build-aware wrapper.
+  return {
+    getDevInstanceIdentity: identity,
+    resolveDevInstanceIdentity: identity,
+    shouldApplyPreReadyAppName: () => true
+  }
+})
 vi.mock('./renderer-heap-headroom')
 vi.mock('./startup-diagnostics', () => ({
   isStartupDiagnosticsEnabled: () => false,

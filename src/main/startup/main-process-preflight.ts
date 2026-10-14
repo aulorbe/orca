@@ -1,7 +1,6 @@
 import { antigravityHookService } from '../antigravity/hook-service'
 import { getRelocatedDaemonHost } from '../daemon/daemon-host-relocation'
 import { app, ipcMain, powerMonitor, session } from 'electron'
-import { configureCustomBuildEnvironment } from '../../shared/custom-build'
 import { is } from '@electron-toolkit/utils'
 import os from 'node:os'
 import { join } from 'node:path'
@@ -34,7 +33,7 @@ import {
   installRemoteServerUpdate,
   isQuittingForUpdate
 } from '../updater'
-import { getDevInstanceIdentity, shouldApplyPreReadyAppName } from './dev-instance-identity'
+import { resolveDevInstanceIdentity, shouldApplyPreReadyAppName } from './dev-instance-identity'
 import { enableRendererHeapHeadroom } from './renderer-heap-headroom'
 import { configureLinuxDevShmUsage } from './linux-dev-shm-policy'
 import { isStartupDiagnosticsEnabled, logStartupDiagnostic } from './startup-diagnostics'
@@ -161,8 +160,7 @@ function initializeMainProcessPreflight(options: MainProcessPreflightOptions): b
   if (state.isServeMode) {
     reserveServeStdoutForReadiness()
   }
-  configureCustomBuildEnvironment(app.getName())
-  state.devInstanceIdentity = getDevInstanceIdentity(is.dev, process.env, app.getName())
+  state.devInstanceIdentity = resolveDevInstanceIdentity(is.dev, app.getName())
   state.devAgentHookEndpointNamespace = state.devInstanceIdentity.isDev
     ? state.devInstanceIdentity.appUserModelId
     : undefined

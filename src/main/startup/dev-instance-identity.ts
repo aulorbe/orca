@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import type { AppIdentity } from '../../shared/app-identity'
-import { CUSTOM_APP_IDENTITY } from '../../shared/custom-build'
+import { configureCustomBuildEnvironment, CUSTOM_APP_IDENTITY } from '../../shared/custom-build'
 
 const BASE_APP_NAME = 'Orca'
 const BASE_APP_USER_MODEL_ID = 'com.stablyai.orca'
@@ -106,4 +106,10 @@ export function getDevInstanceIdentity(
     dockBadgeLabel: null,
     appUserModelId: createDevAppUserModelId(repoRoot ?? devLabel)
   }
+}
+
+/** Fork: apply the Custom build's environment before deriving the dev identity from the app name. */
+export function resolveDevInstanceIdentity(isDev: boolean, appName: string): DevInstanceIdentity {
+  configureCustomBuildEnvironment(appName)
+  return getDevInstanceIdentity(isDev, process.env, appName)
 }

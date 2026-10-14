@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process'
-import { basename, join } from 'node:path'
+// Why: helper paths are macOS paths, so join them with POSIX rules on every host.
+import { posix } from 'node:path'
 import { RuntimeClientError } from './runtime-client-error'
 import { readMacosBundleId, resetMacosTccPermission } from '../macos-tcc-reset'
 import { resolveMacOSComputerUseAppPath } from './macos-native-provider-paths'
@@ -118,10 +119,9 @@ async function resetComputerUsePermissionsAsync(): Promise<ComputerUsePermission
 }
 
 function closeExistingPermissionHelpers(helperAppPath: string): void {
-  const executable = join(helperAppPath, 'Contents', 'MacOS', 'orca-computer-use-macos').replace(
-    /[.*+?^${}()|[\]\\]/g,
-    '\\$&'
-  )
+  const executable = posix
+    .join(helperAppPath, 'Contents', 'MacOS', 'orca-computer-use-macos')
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   // Why: status probes use --permission-status-file and must not be killed
   // while setup helpers are being replaced.
   const setupHelperPatterns = [
@@ -167,5 +167,5 @@ function nextPermissionStep(
   if (!missing) {
     return null
   }
-  return `Grant ${missing.id === 'accessibility' ? 'Accessibility' : 'Screen Recording'} to ${basename(helperAppPath, '.app')}, then retry get-app-state.`
+  return `Grant ${missing.id === 'accessibility' ? 'Accessibility' : 'Screen Recording'} to ${posix.basename(helperAppPath, '.app')}, then retry get-app-state.`
 }

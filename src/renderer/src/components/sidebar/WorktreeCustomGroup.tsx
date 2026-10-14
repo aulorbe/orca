@@ -16,6 +16,7 @@ import {
 } from '../../../../shared/custom-workspace-groups'
 import { getCustomWorkspaceRevealKeys } from './custom-group-parent-key'
 import type { WorkspaceCardIdentity } from '../../../../shared/workspace-card-identity'
+import { translate } from '@/i18n/i18n'
 
 export function WorktreeCustomGroup({
   worktree,
@@ -48,7 +49,11 @@ export function WorktreeCustomGroup({
               }
             }
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Could not change group.')
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : translate('custom.groups.changeFailed', 'Could not change group.')
+            )
           }
         }}
       >

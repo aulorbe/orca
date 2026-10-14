@@ -19880,5 +19880,27 @@
     "browser": "Browser",
     "editor": "Editor",
     "terminal": "Terminal"
+  },
+  "custom": {
+    "review": {
+      "openInGraphite": "Open in Graphite",
+      "openOnProvider": "Open on {{provider}}"
+    },
+    "computerUse": {
+      "revealFailed": "Could not reveal the permission app."
+    },
+    "groups": {
+      "changeFailed": "Could not change group.",
+      "dragListChanged": "Workspace list changed. Try dragging again.",
+      "dragTargetMissing": "Group or status no longer exists.",
+      "automaticSections": "Project and PR sections are automatic. Choose a subgroup within the card’s own section.",
+      "dragPartialFailure": "Some cards could not be moved. Check their status and try again.",
+      "createdGroupDeleted": "The selected group was deleted. The new workspace is ungrouped.",
+      "createdTargetUnknown": "Could not identify the new workspace’s group target. Choose its group in the card’s hover details.",
+      "createdSaveFailed": "Workspace created, but its custom group could not be saved."
+    },
+    "tags": {
+      "updateFailed": "Could not update tags."
+    }
   }
 }

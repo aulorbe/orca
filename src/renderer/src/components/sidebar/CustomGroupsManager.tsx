@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from 'lucide-react'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
+import { createBrowserUuid } from '@/lib/browser-uuid'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -96,7 +97,7 @@ export function CustomGroupsManager({
               onSubmit={(event) => {
                 event.preventDefault()
                 run(() => {
-                  saveGroup({ id: editingId ?? crypto.randomUUID(), name })
+                  saveGroup({ id: editingId ?? createBrowserUuid(), name })
                   reset()
                   input.current?.focus()
                 })

@@ -34,6 +34,7 @@
         "3ab6ac0fc8": "Preview and edit the selected GitHub issue or pull request.",
         "45af57999b": "Close preview",
         "474c59b4b3": "Close · Esc",
+        "53fe19aefc": "Open GitHub merge box",
         "68796dafa0": "pr",
         "88fd82474d": "page",
         "924c2fe05e": "destructive",
@@ -108,10 +109,12 @@
         "61a8c69a33": "page",
         "6568ae8ece": "default",
         "791ddede19": "comment L",
+        "7df8d5fc60": "Open GitHub merge box",
         "805cb72cd4": "Request up to 15 reviewers",
         "82c87eceb9": "Edit assignees",
         "84fc40769a": "-L{{value0}}",
         "85d119be40": "Code context controls",
+        "8ecda455a0": "Open on GitHub",
         "8ff5ae8866": "Assignees",
         "aae99c6c04": "pr",
         "b0e80f083d": "wants to merge into",
@@ -142,6 +145,7 @@
         "33a4bd7f5c": "todos",
         "33fc2bcb30": "Use a Jira Cloud site URL, Atlassian email, and API token to browse issues.",
         "3659f9792a": "board",
+        "37d60046e3": "Open GitHub merge box",
         "38139edb52": "github",
         "3b11c8e8fc": "array",
         "3b7f34282f": "closed",
@@ -754,6 +758,7 @@
           },
           "ChecksPanel": {
             "3c3ad3a1d2": "Started the agent. No selected comments can be marked resolved on the host.",
+            "5c88c6db07": "Open on {{value0}}",
             "7202f4a40a": "unlink PR",
             "abf59262fb": "Review the prompt before starting an agent.",
             "e56c42122e": "destructive",
@@ -1210,20 +1215,6 @@
           "a05bcdaf57": "Agents View",
           "f63ea281e3": "Threaded left-sidebar feed for agent completions and blocking states.",
           "fb82ea1d7a": "Automatically materialize configured files or folders into newly created worktrees.",
-          "nativeChat": {
-            "resumeCopy": "When Orca quits or installs an update, chats that were working are automatically resumed when Orca is reopened.",
-            "resumeTitle": "Resume working chats automatically after a restart",
-            "resumeToggleLabel": "Toggle automatic resume after a restart",
-            "shellEnvCopy": "Codex and Claude chats start with every variable your login shell exports, the same as a terminal. Turn off to choose which ones they get.",
-            "shellEnvNameAdd": "Add",
-            "shellEnvNamePlaceholder": "Variable name",
-            "shellEnvNameRemove": "Remove {{value0}}",
-            "shellEnvNamesAlwaysPassed": "PATH, locale, and SSH_AUTH_SOCK are always passed. Applies the next time a chat starts or resumes.",
-            "shellEnvNamesEmpty": "No variables added yet.",
-            "shellEnvNamesLabel": "Variables to pass from your shell",
-            "shellEnvTitle": "Use your shell environment",
-            "shellEnvToggleLabel": "Toggle using your shell environment"
-          },
           "newWorktreeCardStyle": {
             "copy": "Preview updated worktree-card layout, metadata placement, card-display menu options, and status presentation."
           }
@@ -2858,8 +2849,7 @@
       },
       "composer": {
         "effort": "Effort",
-        "imageUnsupported": "Image paste is not supported for this agent.",
-        "permissions": "Permissions"
+        "imageUnsupported": "Image paste is not supported for this agent."
       },
       "failureWords": {
         "accountSwitchInProgress": "A Claude account switch is in progress. Try again after it finishes.",

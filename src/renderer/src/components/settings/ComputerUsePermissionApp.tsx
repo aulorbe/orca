@@ -2,6 +2,7 @@ import { FolderOpen } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
+import { translate } from '@/i18n/i18n'
 
 export function ComputerUsePermissionApp({ appPath }: { appPath: string | null }) {
   if (!appPath) {
@@ -34,7 +35,12 @@ export function ComputerUsePermissionApp({ appPath }: { appPath: string | null }
             }
           } catch (error) {
             toast.error(
-              error instanceof Error ? error.message : 'Could not reveal the permission app.'
+              error instanceof Error
+                ? error.message
+                : translate(
+                    'custom.computerUse.revealFailed',
+                    'Could not reveal the permission app.'
+                  )
             )
           }
         }}

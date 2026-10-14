@@ -15,6 +15,7 @@ import type { Worktree } from '../../../../../../shared/worktree/types'
 import type { WorktreePointerDrag } from './row-state'
 import { getWorkspaceStatus } from '../../workspace-status'
 import { getCustomParentKey } from '../../custom-group-parent-key'
+import { translate } from '@/i18n/i18n'
 
 const pendingMoves = new Map<string, symbol>()
 
@@ -121,7 +122,9 @@ export async function commitCustomGroupDrop(
   ]
   const workspaces = resolveCustomDragWorkspaces(snapshots, current)
   if (snapshots.length === 0 || !workspaces) {
-    toast.error('Workspace list changed. Try dragging again.')
+    toast.error(
+      translate('custom.groups.dragListChanged', 'Workspace list changed. Try dragging again.')
+    )
     return
   }
   if (
@@ -129,7 +132,7 @@ export async function commitCustomGroupDrop(
       !state.workspaceStatuses.some((status) => status.id === target.statusId)) ||
     (target.groupId !== null && !groups.data.groups.some((group) => group.id === target.groupId))
   ) {
-    toast.error('Group or status no longer exists.')
+    toast.error(translate('custom.groups.dragTargetMissing', 'Group or status no longer exists.'))
     return
   }
   if (
@@ -139,7 +142,10 @@ export async function commitCustomGroupDrop(
     )
   ) {
     toast.error(
-      'Project and PR sections are automatic. Choose a subgroup within the card’s own section.'
+      translate(
+        'custom.groups.automaticSections',
+        'Project and PR sections are automatic. Choose a subgroup within the card’s own section.'
+      )
     )
     return
   }
@@ -201,6 +207,11 @@ export async function commitCustomGroupDrop(
     })
   )
   if (results.some((success) => !success)) {
-    toast.error('Some cards could not be moved. Check their status and try again.')
+    toast.error(
+      translate(
+        'custom.groups.dragPartialFailure',
+        'Some cards could not be moved. Check their status and try again.'
+      )
+    )
   }
 }

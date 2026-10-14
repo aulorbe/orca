@@ -32,8 +32,7 @@ import { WorktreeCardAutomationDetailSection } from './WorktreeCardAutomationDet
 import { WorktreeCardCliDetailSection } from './WorktreeCardCliDetailSection'
 import { WorktreeCardIssueDetailSection } from './WorktreeCardIssueDetailSection'
 import { WorktreeCardHoverIdentityHeader } from './WorktreeCardHoverIdentityHeader'
-import { WorktreeTags } from './WorktreeTags'
-import { WorktreeCustomGroup } from './WorktreeCustomGroup'
+import { useOrganizeEditors, WorktreeCardOrganize } from './WorktreeCardOrganize'
 import { GraphiteStackDetails } from './GraphiteStackDetails'
 import { CommentMarkdownAsync, preloadCommentMarkdown } from './comment-markdown-lazy'
 
@@ -102,8 +101,7 @@ export function WorktreeCardDetailsHover({
     closeHover
   } = hoverControl ?? internalHoverControl
   const [workspaceTitleEditing, setWorkspaceTitleEditing] = React.useState(false)
-  const [tagEditorOpen, setTagEditorOpen] = React.useState(false)
-  const [groupPickerOpen, setGroupPickerOpen] = React.useState(false)
+  const organizeEditors = useOrganizeEditors()
   const pendingWorkspaceTitleCloseRef = React.useRef(false)
   const handleWorkspaceTitleEditingChange = React.useCallback(
     (editing: boolean): void => {
@@ -199,7 +197,7 @@ export function WorktreeCardDetailsHover({
 
   return (
     <HoverCard
-      open={hoverOpen || workspaceTitleEditing || tagEditorOpen || groupPickerOpen}
+      open={hoverOpen || workspaceTitleEditing || organizeEditors.editorOpen}
       onOpenChange={handleEffectiveHoverOpenChange}
       openDelay={openDelay}
       closeDelay={closeDelay}
@@ -414,10 +412,7 @@ export function WorktreeCardDetailsHover({
 
           <GraphiteStackDetails review={review} />
           {detailsAfter}
-          {worktree && (
-            <WorktreeCustomGroup worktree={worktree} onOpenChange={setGroupPickerOpen} />
-          )}
-          {worktree && <WorktreeTags worktree={worktree} onOpenChange={setTagEditorOpen} />}
+          <WorktreeCardOrganize worktree={worktree} editors={organizeEditors} />
         </SelectedTextCopyMenu>
       </HoverCardContent>
     </HoverCard>
