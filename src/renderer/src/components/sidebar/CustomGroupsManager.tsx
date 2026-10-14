@@ -42,12 +42,14 @@ export function CustomGroupsManager({
     setEditingId(null)
     setError(null)
   }
-  const run = (action: () => void) => {
+  const run = (action: () => void): boolean => {
     setError(null)
     try {
       action()
+      return true
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not save groups.')
+      return false
     }
   }
   return (
@@ -96,11 +98,11 @@ export function CustomGroupsManager({
               className="space-y-2"
               onSubmit={(event) => {
                 event.preventDefault()
-                run(() => {
-                  saveGroup({ id: editingId ?? createBrowserUuid(), name })
+                const id = editingId ?? createBrowserUuid()
+                if (run(() => saveGroup({ id, name }))) {
                   reset()
                   input.current?.focus()
-                })
+                }
               }}
             >
               <Label htmlFor={inputId}>{editingId ? 'Rename group' : 'New group'}</Label>
