@@ -40,7 +40,7 @@ it('preserves non-custom drag rows', () => {
     key: 'repo:one',
     label: 'Repo',
     count: 0,
-    tone: 'text-muted-foreground'
+    icon: { kind: 'project' as const }
   }
   expect(customGroupDragRows([header])[0]).toBe(header)
 })

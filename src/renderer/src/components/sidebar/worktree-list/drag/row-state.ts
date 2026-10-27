@@ -1,4 +1,5 @@
 import type { WorkspaceCardIdentity } from '../../../../../../shared/workspace-card-identity'
+import type { DraggedWorktreeCopies } from './dragged-worktree-copies'
 import type { WorkspaceKanbanCardTrackedDropTarget } from '../../workspace-kanban-card-pointer-drag-dom'
 import type { WorktreeSidebarDragRect } from '../../worktree-sidebar-drag-autoscroll'
 import type {
@@ -38,6 +39,8 @@ export type WorktreePointerDrag = {
   currentY: number
   worktreeId: string
   draggedIds: readonly string[]
+  draggedCopies: DraggedWorktreeCopies
+  /** Fork: card identities (incl. instanceId) for custom-group drops. */
   draggedWorkspaces?: readonly WorkspaceCardIdentity[]
   reorderDraggedIds: readonly string[]
   reorderUnitDraggedIds: readonly string[]
@@ -98,8 +101,7 @@ export function updateLatestWorktreeStatusDropTarget(
       : null
 }
 
-// Why matchPointerY: pointer-driven updates must repaint when only the pointer moved; native-drag
-// updates deliberately keep the previous state identity in that case.
+// Pointer updates repaint on Y-only movement; native drag preserves the previous state identity.
 export function clearWorktreeDropPreview(
   previous: WorktreeRowDragState,
   args: { pointerY: number | null; matchPointerY?: boolean; preserveOffsets?: boolean }

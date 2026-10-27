@@ -4,7 +4,6 @@ import { loadUpdaterModule, warmUpdaterModule } from './updater-test-module-load
 const {
   appMock,
   autoUpdaterMock,
-  isMock,
   powerMonitorOnMock,
   fetchNudgeMock,
   shouldApplyNudgeMock,
@@ -15,7 +14,6 @@ const {
 vi.mock('electron', () => moduleFactories.electron())
 vi.mock('electron-updater', () => moduleFactories.electronUpdater())
 vi.mock('./electron-updater-loader', () => moduleFactories.electronUpdaterLoader())
-vi.mock('@electron-toolkit/utils', () => moduleFactories.electronToolkitUtils())
 vi.mock('./ipc/pty/kill-all', () => moduleFactories.ptyKillAll())
 vi.mock('./linux-update-package-type', () => moduleFactories.linuxUpdatePackageType())
 vi.mock('./updater-lifecycle-diagnostics', () => moduleFactories.updaterLifecycleDiagnostics())
@@ -39,7 +37,7 @@ describe('updater', () => {
   it.each(['dev', 'custom'])(
     'does not load or configure electron-updater during %s setup',
     async (mode) => {
-      isMock.dev = mode === 'dev'
+      appMock.isPackaged = mode !== 'dev'
       vi.stubEnv('ORCA_CUSTOM_BUILD', mode === 'custom' ? '1' : undefined)
       const mainWindow = { webContents: { send: vi.fn() } }
 
@@ -47,7 +45,6 @@ describe('updater', () => {
 
       setupAutoUpdater(mainWindow as never)
 
-      // Why: E2E dev-mode launches use a default app version that makes electron-updater throw during module load.
       expect(autoUpdaterMock.updateConfigPath).toBeUndefined()
       expect(autoUpdaterMock.setFeedURL).not.toHaveBeenCalled()
       expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled()
@@ -245,9 +242,7 @@ describe('updater', () => {
 
     const { setupAutoUpdater } = await loadUpdaterModule()
 
-    // Why: a startup check also arms its own 24h timer, which would fire at the same boundary as the
-    // reschedule under test; entering 23h in makes the startup timer fire the check itself, so only
-    // the result handler's re-arm can produce a check 24h later.
+    // Start 23h in to distinguish the result handler's re-arm from the initial startup timer.
     setupAutoUpdater(mainWindow as never, {
       getLastUpdateCheckAt: () => Date.now() - 23 * 60 * 60 * 1000,
       setLastUpdateCheckAt
@@ -272,15 +267,12 @@ describe('updater', () => {
     expect(autoUpdaterMock.checkForUpdates).toHaveBeenCalledTimes(1)
 
     await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
-    // Why: the boundary tick sweeps the updater's other timers (30-minute nudge poll, 45-second
-    // stall guard) too, so pin the reschedule itself — nothing before 24h, a check once it elapses —
-    // rather than an exact process-wide call total.
+    // Other timers fire at this boundary too; assert the schedule rather than an exact global call count.
     await vi.waitFor(() => {
       expect(autoUpdaterMock.checkForUpdates.mock.calls.length).toBeGreaterThanOrEqual(2)
     })
   })
 
-  // Why: a no-op verifyUpdateCodeSignature override would silently accept every installer; keep electron-updater's Authenticode check (issue #631 resolved).
   it('does not disable Windows Authenticode verification on win32', async () => {
     vi.stubGlobal('process', { ...process, platform: 'win32' })
 

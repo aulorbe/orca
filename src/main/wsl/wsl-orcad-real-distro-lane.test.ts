@@ -1,15 +1,7 @@
-// WSL via orcad against real WSL2 distros (step C10): deploy and launch (C4), connect over the
-// wsl.exe stdio bridge (C5), drive runtime RPC through it, and prove liveness (C6) on one
-// systemd-off and one systemd-on distro. Two phases, each its own process, so the holder is
-// proven to outlive the process that spawned it:
-//   launch  - deploy, RPC, kill orcad => relaunch + census, `wsl --terminate` => terminals exited
-//   survive - >= 60 s after launch exited: distros still Running, holders adopted live, reconnect,
-//             teardown leaves no bridge or holder processes, WSLInterop intact
-// .github/workflows/wsl-orcad-e2e.yml imports the distros and runs both phases.
-//
+// C10 real WSL2/systemd-on/off contract: C4 deploy, C5 RPC bridge, C6 loss/recovery, E1 deferred/forced/idle updates, then a separate survive process proves holder adoption, git/folder chat and cleanup. wsl-orcad-e2e.yml imports/runs both phases.
 // Run: ORCA_RUN_WSL_ORCAD_LANE=1 ORCA_WSL_ORCAD_LANE_PHASE=launch|survive pnpm test <this file>
-import { randomBytes } from 'node:crypto'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash, randomBytes } from 'node:crypto'
+import { appendFileSync, cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -23,18 +15,23 @@ import { pairedRuntimeConnectionFromOffer } from '../../shared/paired-runtime-co
 import { parsePairingCode } from '../../shared/pairing'
 import { sendRemoteRuntimeRequest } from '../../shared/remote-runtime-client'
 import { buildWslExecArgs } from '../../shared/wsl-login-shell-command'
+import {
+  ORCAD_LAUNCHER_FILENAME,
+  ORCAD_TEMPLATE_MANIFEST_FILENAME
+} from '../../shared/orcad-artifacts'
 import { requestOrcadTerminalCensus } from '../ssh/orcad-terminal-census-client'
-import { execCommand } from '../ssh/ssh-relay-exec-command'
+import { execCommand } from '../ssh/remote-exec/remote-exec-command'
 import { readConfirmedRunningWslDistros } from '../wsl-background-distro-gate'
 import { readWindowsProcessTableFresh } from '../windows/windows-process-table'
 import { resolveWslInteropSpawnCwd } from '../wsl-interop-spawn-directory'
 import { createWslDistroHolder, type WslDistroHolder } from './wsl-distro-holder'
+import { proveWslStructuredChat } from './wsl-orcad-structured-chat-contract'
 import { WSL_DISTRO_HOLDER_MARKER } from './wsl-distro-holder-command'
 import { resolveWslExecutablePath } from './wsl-executable-path'
 import { wslDistroHolderKey } from './wsl-distro-holder-record'
 import { WslOrcadConnectionManager, type WslOrcadConnection } from './wsl-orcad-connection'
 import type { WslOrcadConnectionStatus } from './wsl-orcad-connection-status'
-import { defaultWslOrcadEnvironmentId } from './wsl-orcad-deploy'
+import { defaultWslOrcadEnvironmentId, deployAndLaunchWslOrcad } from './wsl-orcad-deploy'
 import { createWslOrcadHostTransport } from './wsl-orcad-host-transport'
 import type { WslOrcadLivenessSupervisor } from './wsl-orcad-liveness-supervisor'
 import { createWslOrcadLivenessSupervisor } from './wsl-orcad-liveness-wiring'
@@ -42,10 +39,11 @@ import { createWslOrcadLivenessSupervisor } from './wsl-orcad-liveness-wiring'
 const RUN = process.env.ORCA_RUN_WSL_ORCAD_LANE === '1'
 const PHASE = process.env.ORCA_WSL_ORCAD_LANE_PHASE ?? 'launch'
 const PLAIN = process.env.ORCA_WSL_ORCAD_LANE_PLAIN_DISTRO ?? 'orca-lane-plain'
+// Rootfs families without systemd leave this empty and run only the plain distro.
 const SYSTEMD = process.env.ORCA_WSL_ORCAD_LANE_SYSTEMD_DISTRO ?? 'orca-lane-systemd'
 const DISTROS = [
   { name: PLAIN, systemd: false },
-  { name: SYSTEMD, systemd: true }
+  ...(SYSTEMD ? [{ name: SYSTEMD, systemd: true }] : [])
 ]
 const WORK_DIR = process.env.ORCA_WSL_ORCAD_LANE_DIR ?? join(tmpdir(), 'orca-wsl-orcad-lane')
 const USER_DATA = join(WORK_DIR, 'userData')
@@ -55,10 +53,16 @@ const HOLDER_SURVIVAL_MS = 60_000
 const DISTRO_TIMEOUT_MS = 12 * 60_000
 const BRIDGE_PATTERN = '[o]rcadStdioBridge'
 const WSL_INTEROP = '/proc/sys/fs/binfmt_misc/WSLInterop'
+// E5: orcad Git must inherit login exports even though --exec sources no rc.
+const LOGIN_ENV_SOCK = '/tmp/orca-lane-agent.sock'
+const LOGIN_ENV_TAG = 'orca-lane-login-env'
+const LANE_REPO = '$HOME/wsl-orcad-lane-repo'
 
 type LaunchState = {
   launchEndedAtMs: number
   orcadPids: Record<string, number | null>
+  /** The template each distro last deployed from, so the survive phase does not update it. */
+  templates: Record<string, string>
 }
 type Receipt = Record<string, unknown>
 
@@ -70,6 +74,8 @@ let visibleWork = true
 let holder: WslDistroHolder
 let manager: WslOrcadConnectionManager
 let supervisor: WslOrcadLivenessSupervisor | null = null
+// Per distro key; unset deploys the packaged template (ORCA_ORCAD_TEMPLATE_PATH).
+const templates = new Map<string, string>()
 
 function installLaneAppEnvironment(): void {
   const { version } = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'))
@@ -133,7 +139,7 @@ async function assertWslInteropIntact(viaDistro: string, label: string): Promise
       `echo ':WSLInterop:M::MZ::/init:P' > /proc/sys/fs/binfmt_misc/register && echo restored; fi`
   )
   interopChecks.push({ label, viaDistro, result: probe.output })
-  // Restored above so later jobs on this runner are not poisoned; the lane still fails.
+  // Repair for later runner jobs, but still fail this lane on the detected wipe.
   expect(probe.output, `WSLInterop ${label}`).toBe('present')
   const ver = await guest(viaDistro, '/mnt/c/Windows/System32/cmd.exe /c ver')
   expect(ver).toMatch(/Windows/u)
@@ -241,11 +247,74 @@ function createLaneManager(): void {
   })
   manager = new WslOrcadConnectionManager({
     holder,
+    deployAndLaunch: (distro, options) =>
+      deployAndLaunchWslOrcad(distro, {
+        ...options,
+        templateDir: templates.get(wslDistroHolderKey(distro))
+      }),
     onChange: (distro, _connection, status) => {
       statusLog(distro).push(status)
       console.log(`[lane] ${distro} ${JSON.stringify(status)}`)
     }
   })
+}
+
+/** Runs `command` in a terminal and waits for a printf-split token the echoed input never matches. */
+async function runInTerminal(
+  connection: WslOrcadConnection,
+  handle: string,
+  command: string,
+  what: string
+): Promise<void> {
+  const nonce = randomBytes(6).toString('hex')
+  await rpc(connection, 'terminal.send', {
+    terminal: handle,
+    text: `${command} && printf 'WSL_LANE_%s\\n' ${nonce}`,
+    enter: true
+  })
+  await waitFor(
+    what,
+    async () => {
+      const read = await rpc<{ terminal: { tail?: unknown[] } }>(connection, 'terminal.read', {
+        terminal: handle
+      })
+      return (read.terminal.tail ?? []).map(String).join('\n').includes(`WSL_LANE_${nonce}`)
+        ? true
+        : null
+    },
+    60_000,
+    500
+  )
+}
+
+/** After launching wsl.exe exits, prove orcad Git inherits login exports and terminals retain Windows interop. */
+async function proveDetachedSession(
+  connection: WslOrcadConnection,
+  distro: string
+): Promise<Receipt> {
+  const repoPath = (
+    await guest(
+      distro,
+      `set -e; cd "${LANE_REPO}"; rm -f "$HOME/${LOGIN_ENV_TAG}"; ` +
+        `printf '#!/bin/sh\\nprintf %%s "$SSH_AUTH_SOCK" > "$HOME/${LOGIN_ENV_TAG}"\\n' ` +
+        '> .git/hooks/pre-commit; chmod +x .git/hooks/pre-commit; ' +
+        'git config user.email lane@orca.test; git config user.name lane; ' +
+        'date +%s%N > lane-file; git add lane-file; pwd'
+    )
+  ).trim()
+  await rpc(connection, 'git.commit', { worktree: `path:${repoPath}`, message: 'lane commit' })
+  const hookSock = (await guest(distro, `cat "$HOME/${LOGIN_ENV_TAG}" 2>/dev/null || true`)).trim()
+  expect(hookSock, `${distro}: SSH_AUTH_SOCK seen by orcad's git`).toBe(LOGIN_ENV_SOCK)
+  const created = await rpc<{ terminal: { handle: string } }>(connection, 'terminal.create', {
+    worktree: `path:${repoPath}`
+  })
+  await runInTerminal(
+    connection,
+    created.terminal.handle,
+    '/mnt/c/Windows/System32/cmd.exe /c ver',
+    `Windows interop from a terminal in ${distro}`
+  )
+  return { hookSshAuthSock: hookSock, terminalInterop: 'ok' }
 }
 
 /** status, repo add on a fresh `git init`, terminal create, and its output read back. */
@@ -255,7 +324,7 @@ async function proveRuntimeRpc(connection: WslOrcadConnection, distro: string): 
   const repoPath = (
     await guest(
       distro,
-      'set -e; d="$HOME/wsl-orcad-lane-repo"; rm -rf "$d"; mkdir -p "$d"; cd "$d"; ' +
+      `set -e; d="${LANE_REPO}"; rm -rf "$d"; mkdir -p "$d"; cd "$d"; ` +
         'git init -q -b main; git -c user.email=lane@orca.test -c user.name=lane ' +
         'commit -q --allow-empty -m seed; printf %s "$d"'
     )
@@ -269,31 +338,113 @@ async function proveRuntimeRpc(connection: WslOrcadConnection, distro: string): 
   })
   const handle = created.terminal.handle
   expect(handle).toEqual(expect.any(String))
-  const nonce = randomBytes(6).toString('hex')
-  // printf splits the token so the echoed input line never matches it.
-  await rpc(connection, 'terminal.send', {
-    terminal: handle,
-    text: `printf 'WSL_LANE_%s\\n' ${nonce}`,
-    enter: true
-  })
-  await waitFor(
-    `terminal output token in ${distro}`,
-    async () => {
-      const read = await rpc<{ terminal: { tail?: unknown[] } }>(connection, 'terminal.read', {
-        terminal: handle
-      })
-      return (read.terminal.tail ?? []).map(String).join('\n').includes(`WSL_LANE_${nonce}`)
-        ? true
-        : null
-    },
-    60_000,
-    500
-  )
+  await runInTerminal(connection, handle, ':', `terminal output token in ${distro}`)
   return {
     runtimeId: status.runtimeId,
     repoId: added.repo.id,
     terminal: handle
   }
+}
+
+/** The packaged template with a different orcad build, as the next app release ships one. */
+function nextTemplate(label: string): string {
+  const packaged = process.env.ORCA_ORCAD_TEMPLATE_PATH
+  if (!packaged) {
+    throw new Error('ORCA_ORCAD_TEMPLATE_PATH must name the packaged orcad template')
+  }
+  const dir = join(WORK_DIR, `template-${label}`)
+  rmSync(dir, { recursive: true, force: true })
+  cpSync(packaged, dir, { recursive: true })
+  const launcher = join(dir, ORCAD_LAUNCHER_FILENAME)
+  appendFileSync(launcher, `\n// wsl-orcad-lane build ${label}\n`)
+  const manifestPath = join(dir, ORCAD_TEMPLATE_MANIFEST_FILENAME)
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  manifest.commonSha256[ORCAD_LAUNCHER_FILENAME] = createHash('sha256')
+    .update(readFileSync(launcher))
+    .digest('hex')
+  writeFileSync(manifestPath, JSON.stringify(manifest))
+  return dir
+}
+
+async function waitForNoLiveTerminals(connection: WslOrcadConnection): Promise<void> {
+  await waitFor(
+    'the closed terminal to leave the census',
+    async () =>
+      (await requestOrcadTerminalCensus(pairedConnection(connection), 0)).liveSessions === 0
+        ? true
+        : null,
+    30_000,
+    500
+  )
+}
+
+/** App updates (E1): N -> N+1 over a live terminal, N+2 idle, N+3 after a reboot. */
+async function updatePhase(distro: string): Promise<Receipt> {
+  const result: Receipt = {}
+  if (!supervisor) {
+    throw new Error('supervisor missing')
+  }
+  const key = wslDistroHolderKey(distro)
+  const before = await supervisor.connect(distro)
+  // The launch phase added this repo; its terminals died with the distro.
+  const worktree = `path:${(await guest(distro, 'printf %s "$HOME/wsl-orcad-lane-repo"')).trim()}`
+  const openTerminal = async (connection: WslOrcadConnection): Promise<string> => {
+    const created = await rpc<{ terminal: { handle: string } }>(connection, 'terminal.create', {
+      worktree
+    })
+    await runInTerminal(connection, created.terminal.handle, ':', `terminal in ${distro}`)
+    return created.terminal.handle
+  }
+  const terminal = await openTerminal(before)
+
+  // Live terminals defer updates while the incumbent serves.
+  templates.set(key, nextTemplate('n1'))
+  let started = performance.now()
+  const deferred = await supervisor.connect(distro)
+  result.deferMs = Math.round(performance.now() - started)
+  expect(deferred.fullVersion).toBe(before.fullVersion)
+  expect(deferred.deferredUpdate).toMatchObject({
+    code: 'orcad_update_terminals_running',
+    forceable: true
+  })
+  result.deferred = deferred.deferredUpdate
+  await runInTerminal(deferred, terminal, ':', `terminal under the incumbent in ${distro}`)
+
+  // Force switches builds while the preserved daemon keeps the terminal.
+  started = performance.now()
+  const forced = await supervisor.connect(distro, { intent: 'force' })
+  result.forceMs = Math.round(performance.now() - started)
+  expect(forced.fullVersion).toBe(deferred.deferredUpdate?.candidateVersion)
+  expect(forced.deferredUpdate).toBeNull()
+  await runInTerminal(forced, terminal, ':', `terminal kept across Force in ${distro}`)
+
+  // After terminals close, connect can update silently.
+  await rpc(forced, 'terminal.close', { terminal })
+  await waitForNoLiveTerminals(forced)
+  templates.set(key, nextTemplate('n2'))
+  started = performance.now()
+  const silent = await supervisor.connect(distro)
+  result.silentMs = Math.round(performance.now() - started)
+  expect(silent.fullVersion).not.toBe(forced.fullVersion)
+  expect(silent.deferredUpdate).toBeNull()
+
+  // After reboot, wake the incumbent to prove its empty census.
+  await openTerminal(silent)
+  visibleWork = false
+  const since = statusLog(distro).length
+  expect((await wslExe(['--terminate', distro])).code).toBe(0)
+  await waitForStatus(distro, since, 'distro-stopped', 30_000)
+  visibleWork = true
+  templates.set(key, nextTemplate('n3'))
+  started = performance.now()
+  const rebooted = await supervisor.connect(distro)
+  result.rebootUpdateMs = Math.round(performance.now() - started)
+  expect(rebooted.fullVersion).not.toBe(silent.fullVersion)
+  expect(rebooted.deferredUpdate).toBeNull()
+  await rpc(rebooted, 'status.get')
+  result.versions = [before, forced, silent, rebooted].map((c) => c.fullVersion)
+  result.orcadPid = rebooted.pid
+  return result
 }
 
 async function launchPhase(distro: string, systemd: boolean): Promise<Receipt> {
@@ -302,6 +453,14 @@ async function launchPhase(distro: string, systemd: boolean): Promise<Receipt> {
   if (!supervisor) {
     throw new Error('supervisor missing')
   }
+  // Bash reads only the first login profile; Fedora/Arch ship .bash_profile.
+  await guest(
+    distro,
+    `rc="$HOME/.profile"; for f in "$HOME/.bash_profile" "$HOME/.bash_login"; do ` +
+      `if [ -f "$f" ]; then rc="$f"; break; fi; done; ` +
+      `grep -q ${LOGIN_ENV_TAG} "$rc" 2>/dev/null || ` +
+      `printf 'export SSH_AUTH_SOCK=${LOGIN_ENV_SOCK} # ${LOGIN_ENV_TAG}\\n' >> "$rc"`
+  )
   let started = performance.now()
   const connection = await supervisor.connect(distro)
   result.connectMs = Math.round(performance.now() - started)
@@ -317,7 +476,7 @@ async function launchPhase(distro: string, systemd: boolean): Promise<Receipt> {
   expect(await runningDistros()).toContain(wslDistroHolderKey(distro))
   result.rpc = await proveRuntimeRpc(connection, distro)
 
-  // orcad killed: the watch sees it, the verdict is orcad-exited, and recovery relaunches it.
+  // Watch exit must classify orcad-exited and trigger recovery.
   let since = statusLog(distro).length
   started = performance.now()
   await guest(distro, `kill -9 ${connection.pid}; true`)
@@ -336,7 +495,7 @@ async function launchPhase(distro: string, systemd: boolean): Promise<Receipt> {
   expect(relaunched.pid).not.toBe(connection.pid)
   await rpc(relaunched, 'status.get')
 
-  // `wsl --terminate`: nothing user-visible, so the verdict stands and nothing reboots it.
+  // Distro stop without visible demand must remain stopped.
   visibleWork = false
   since = statusLog(distro).length
   started = performance.now()
@@ -350,7 +509,7 @@ async function launchPhase(distro: string, systemd: boolean): Promise<Receipt> {
     await assertWslInteropIntact(PLAIN, `after terminating ${distro}`)
   }
 
-  // A user connect is the one path allowed to boot it again.
+  // Explicit Connect may boot the distro.
   visibleWork = true
   started = performance.now()
   const rebooted = await supervisor.connect(distro)
@@ -365,13 +524,16 @@ async function launchPhase(distro: string, systemd: boolean): Promise<Receipt> {
 
 async function survivePhase(): Promise<void> {
   const state: LaunchState = JSON.parse(readFileSync(STATE_FILE, 'utf8'))
+  for (const [key, dir] of Object.entries(state.templates ?? {})) {
+    templates.set(key, dir)
+  }
   const waitMs = state.launchEndedAtMs + HOLDER_SURVIVAL_MS - Date.now()
   if (waitMs > 0) {
     await new Promise((resolve) => setTimeout(resolve, waitMs))
   }
   const secondsSinceLaunchExited = Math.round((Date.now() - state.launchEndedAtMs) / 1000)
   receipt.secondsSinceLaunchExited = secondsSinceLaunchExited
-  // Only the holders keep them up: no other wsl.exe client survived the launch process.
+  // Only holders remain after the launching process and its other wsl.exe clients exit.
   const running = await runningDistros()
   for (const { name } of DISTROS) {
     expect(running, `${name} Running ${secondsSinceLaunchExited} s later`).toContain(
@@ -384,9 +546,26 @@ async function survivePhase(): Promise<void> {
     expect(adopted).toContainEqual({ distro: name, state: 'live' })
   }
   for (const { name } of DISTROS) {
-    const connection = await manager.ensure(name)
+    let connection = await manager.ensure(name)
     await rpc(connection, 'status.get')
+    receipt[`${name}.detachedSession`] = await proveDetachedSession(connection, name)
     receipt[`${name}.census`] = await requestOrcadTerminalCensus(pairedConnection(connection), 0)
+    if (connection.pid === null) {
+      throw new Error('Missing guest runtime PID')
+    }
+    receipt[`${name}.chat`] = await proveWslStructuredChat({
+      rpc: (method, params) => rpc(connection, method, params),
+      guest: (command) => guest(name, command),
+      pairing: () => pairedConnection(connection),
+      runtimePid: connection.pid,
+      reconnect: async (whileDisconnected) => {
+        const { localPort, pid } = connection
+        await connection.close()
+        await whileDisconnected()
+        connection = await manager.ensure(name, { localPort })
+        expect(connection.pid, 'bridge loss must preserve the guest runtime').toBe(pid)
+      }
+    })
   }
 
   // Teardown: bridges closed, holders released, distros terminated.
@@ -397,7 +576,7 @@ async function survivePhase(): Promise<void> {
   const released: Receipt = {}
   receipt.released = released
   for (const { name } of DISTROS) {
-    // A holder caught mid-exit can read `unverifiable` (no command line yet no exit); it must settle.
+    // Mid-exit unreadable command lines are unverifiable; wait for proven holder exit.
     released[name] = await holder.release(name)
     await waitFor(
       `the ${name} holder to exit`,
@@ -407,8 +586,10 @@ async function survivePhase(): Promise<void> {
     )
   }
   // The systemd distro stops while the plain one still runs, so the interop entry is shared.
-  expect((await wslExe(['--terminate', SYSTEMD])).code).toBe(0)
-  await assertWslInteropIntact(PLAIN, `after final terminate of ${SYSTEMD}`)
+  if (SYSTEMD) {
+    expect((await wslExe(['--terminate', SYSTEMD])).code).toBe(0)
+    await assertWslInteropIntact(PLAIN, `after final terminate of ${SYSTEMD}`)
+  }
   expect((await wslExe(['--terminate', PLAIN])).code).toBe(0)
   const leftovers = await waitFor(
     'lane wsl.exe processes to exit',
@@ -451,6 +632,9 @@ describe.runIf(RUN && process.platform === 'win32')('WSL orcad on real WSL2 dist
         receipt[name] = result
         pids[name] = typeof result.orcadPid === 'number' ? result.orcadPid : null
       }
+      const update = await updatePhase(PLAIN)
+      receipt.update = update
+      pids[PLAIN] = typeof update.orcadPid === 'number' ? update.orcadPid : null
       // Bridges and watches go; the holders must not.
       await supervisor.dispose()
       supervisor = null
@@ -460,15 +644,16 @@ describe.runIf(RUN && process.platform === 'win32')('WSL orcad on real WSL2 dist
       }
       const state: LaunchState = {
         launchEndedAtMs: Date.now(),
-        orcadPids: pids
+        orcadPids: pids,
+        templates: Object.fromEntries(templates)
       }
       writeFileSync(STATE_FILE, JSON.stringify(state))
     },
-    DISTROS.length * DISTRO_TIMEOUT_MS
+    (DISTROS.length + 1) * DISTRO_TIMEOUT_MS
   )
 
   it.runIf(PHASE === 'survive')(
-    'keeps both distros held after the launching process exited, then tears down cleanly',
+    'keeps every distro held after the launching process exited, then tears down cleanly',
     survivePhase,
     DISTRO_TIMEOUT_MS
   )

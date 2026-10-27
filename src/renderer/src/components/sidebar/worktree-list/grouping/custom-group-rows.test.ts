@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { buildRows } from './build-rows'
-import { PINNED_GROUP_KEY } from './group-keys'
-import { getGroupKeyForWorktree } from './worktree-group-keys'
+import { buildRows } from './build-rows.test-fixture'
+import { PINNED_GROUP_KEY } from '../../../../../../shared/sidebar-list/group-keys'
+import { getGroupKeyForWorktree } from '../../../../../../shared/sidebar-list/worktree-group-keys'
 import { repoMap, worktree } from '../../worktree-list-groups-test-fixtures'
 import {
   assignCustomWorkspaceGroup,
@@ -30,7 +30,7 @@ function argsFor(
   collapsed = new Set<string>()
 ) {
   const args: Parameters<typeof buildRows> = ['repo', cards, repoMap, null, collapsed]
-  args[22] = state
+  args[23] = state
   return args
 }
 
@@ -109,7 +109,7 @@ describe('custom group rows', () => {
       'frontend'
     )
     const args = argsFor(state)
-    args[23] = true
+    args[24] = true
     expect(
       buildRows(...args)
         .filter((row) => row.type === 'header')
@@ -120,7 +120,7 @@ describe('custom group rows', () => {
       ['Infrastructure', 0]
     ])
     const nestedArgs = argsFor({ ...state, byStatus: true })
-    nestedArgs[23] = true
+    nestedArgs[24] = true
     expect(
       buildRows(...nestedArgs).some((row) => row.type === 'header' && row.label === 'Ungrouped')
     ).toBe(false)
@@ -199,12 +199,12 @@ describe('custom group rows', () => {
     expect(
       rows.find((row) => row.type === 'header' && row.key === 'custom-group:infra')
     ).toMatchObject({ count: 1 })
-    args[22] = { ...state, byStatus: true }
+    args[23] = { ...state, byStatus: true }
     const nested = buildRows(...args)
     expect(nested.filter((row) => row.type === 'folder-workspace')).toMatchObject([
       { sectionKey: 'custom-group:status/in-progress/infra', groupDepth: 1 }
     ])
-    args[22] = { ...state, parentGroupBy: 'repo' }
+    args[23] = { ...state, parentGroupBy: 'repo' }
     expect(buildRows(...args).filter((row) => row.type === 'folder-workspace')).toMatchObject([
       { sectionKey: customGroupChildKey('infra', 'project-group:project'), groupDepth: 1 }
     ])

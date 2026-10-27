@@ -122,8 +122,7 @@ function closeExistingPermissionHelpers(helperAppPath: string): void {
   const executable = posix
     .join(helperAppPath, 'Contents', 'MacOS', 'orca-computer-use-macos')
     .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  // Why: status probes use --permission-status-file and must not be killed
-  // while setup helpers are being replaced.
+  // Preserve concurrent status probes when replacing permission-setup helpers.
   const setupHelperPatterns = [
     `^${executable}[[:space:]]+--permission([[:space:]]|$)`,
     `^${executable}[[:space:]]+--permissions([[:space:]]|$)`
@@ -148,8 +147,7 @@ async function readComputerUseBundleId(helperAppPath: string): Promise<string> {
 }
 
 async function resetTccPermission(service: string, bundleId: string): Promise<void> {
-  // Why: macOS keeps TCC rows after uninstall; users need an explicit way to
-  // clear stale grants or denials for the helper's stable bundle identity.
+  // TCC grants survive uninstall; explicitly reset the helper's stable bundle identity.
   const result = await resetMacosTccPermission(service, bundleId)
   if (!result.ok) {
     throw new RuntimeClientError(

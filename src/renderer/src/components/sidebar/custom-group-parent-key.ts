@@ -1,38 +1,63 @@
 import type { AppState } from '@/store/types'
 import { getRepoMapFromState } from '@/store/selectors'
 import { getProjectHostSetupProjectionFromState } from '@/store/project-host-setup-selector'
+import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
-import { getWorkspaceStatus, getWorkspaceStatusGroupKey } from './workspace-status'
-import { getProjectGroupHeaderKey } from './worktree-list/grouping/group-keys'
-import { getFolderWorkspaceLaneKey } from './worktree-list/grouping/folder-workspace-lanes'
+import {
+  getWorkspaceStatus,
+  getWorkspaceStatusGroupKey
+} from '../../../../shared/workspace-statuses'
+import {
+  customGroupChildKey,
+  getCustomParentGroupBy,
+  getCustomWorkspaceGroupId,
+  getCustomWorkspaceGroupKeys
+} from '../../../../shared/custom-workspace-groups'
+import { getProjectGroupHeaderKey } from '../../../../shared/sidebar-list/group-keys'
+import { getFolderWorkspaceLaneKey } from '../../../../shared/sidebar-list/folder-workspace-lanes'
 import {
   getGroupKeyForWorktree,
   getGroupKeysForWorktree
-} from './worktree-list/grouping/worktree-group-keys'
-import type { WorktreeGroupBy } from './worktree-list/grouping/row-types'
+} from '../../../../shared/sidebar-list/worktree-group-keys'
+import type { WorktreeGroupBy } from '../../../../shared/sidebar-list/row-types'
+import { createSidebarPRGroupReader } from './worktree-list/grouping/pr-group-key'
 import { getFolderWorkspaceRevealGroupKeys } from './worktree-list/navigation/folder-reveal'
+import { selectFolderWorkspaces } from '@/store/workspace-record-selectors'
 
 export function getCustomWorkspaceRevealKeys(state: AppState, workspace: Worktree): string[] {
   if (parseWorkspaceKey(workspace.id)?.type === 'folder') {
     return getFolderWorkspaceRevealGroupKeys(
       workspace.id,
-      state.folderWorkspaces,
+      selectFolderWorkspaces(state),
       state.projectGroups,
       { groupBy: state.groupBy, workspaceStatuses: state.workspaceStatuses }
     )
   }
+  const customGroups = useCustomWorkspaceGroups.getState().data
+  let groupBy = state.groupBy
+  if (customGroups.enabled) {
+    const parent = getCustomParentGroupBy(customGroups)
+    if (parent === null || parent === 'none') {
+      return getCustomWorkspaceGroupKeys(customGroups, workspace, state.workspaceStatuses)
+    }
+    groupBy = parent
+  }
+  const repoMap = getRepoMapFromState(state)
   const projection = getProjectHostSetupProjectionFromState(state)
-  return getGroupKeysForWorktree(
-    state.groupBy,
+  const keys = getGroupKeysForWorktree(
+    groupBy,
     workspace,
-    getRepoMapFromState(state),
-    state.prCache,
+    repoMap,
+    createSidebarPRGroupReader(repoMap, state.prCache),
     state.workspaceStatuses,
-    state.settings,
     state.projectGroups,
     { projects: projection.projects, projectHostSetups: projection.setups }
   )
+  const groupKey = keys.at(-1)
+  return customGroups.enabled && groupKey
+    ? [...keys, customGroupChildKey(getCustomWorkspaceGroupId(customGroups, workspace), groupKey)]
+    : keys
 }
 
 export function getCustomParentKey(
@@ -48,7 +73,7 @@ export function getCustomParentKey(
   }
   const scope = parseWorkspaceKey(workspace.id)
   if (scope?.type === 'folder') {
-    const folderWorkspace = state.folderWorkspaces.find(
+    const folderWorkspace = selectFolderWorkspaces(state).find(
       (folder) => folder.id === scope.folderWorkspaceId
     )
     const projectGroup = state.projectGroups.find(
@@ -65,14 +90,14 @@ export function getCustomParentKey(
           state.workspaceStatuses
         )
   }
+  const repoMap = getRepoMapFromState(state)
   const projection = getProjectHostSetupProjectionFromState(state)
   return getGroupKeyForWorktree(
     groupBy,
     workspace,
-    getRepoMapFromState(state),
-    state.prCache,
+    repoMap,
+    createSidebarPRGroupReader(repoMap, state.prCache),
     state.workspaceStatuses,
-    state.settings,
     { projects: projection.projects, projectHostSetups: projection.setups }
   )
 }

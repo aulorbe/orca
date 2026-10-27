@@ -1,4 +1,4 @@
-import type { HostSectionRow } from '../../host-section-rows'
+import type { HostSectionRow } from '../../../../../../shared/sidebar-list/host-section-rows'
 import { folderWorkspaceToWorktree } from '../../../../../../shared/folder-workspace-worktree'
 import { CUSTOM_GROUP_KEY_PREFIX } from '../../../../../../shared/custom-workspace-groups'
 
