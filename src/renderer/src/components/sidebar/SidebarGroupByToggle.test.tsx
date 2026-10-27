@@ -9,7 +9,7 @@ import {
   EMPTY_CUSTOM_WORKSPACE_GROUPS,
   getCustomParentGroupBy
 } from '../../../../shared/custom-workspace-groups'
-import type { WorktreeGroupBy } from './worktree-list/grouping/row-types'
+import type { WorktreeGroupBy } from '../../../../shared/sidebar-list/row-types'
 
 const roots: Root[] = []
 

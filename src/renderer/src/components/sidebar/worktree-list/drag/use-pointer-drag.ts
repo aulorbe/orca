@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import type React from 'react'
-import type { WorkspaceStatus, Worktree } from '../../../../../../shared/worktree/types'
+import type { Worktree } from '../../../../../../shared/worktree/types'
 import { getWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
 import { CUSTOM_GROUP_KEY_PREFIX } from '../../../../../../shared/custom-workspace-groups'
 import { hasWorkspaceKanbanSidebarDropBoard } from '../../workspace-kanban-sidebar-drop'
@@ -13,6 +13,7 @@ import { getWorktreeSidebarDragRectsForGroup } from '../../worktree-sidebar-drag
 import { getWorktreeSidebarDragGrab } from '../../worktree-sidebar-drag-geometry'
 import { NOOP_WORKSPACE_BOARD_DRAG_PREVIEW_CALLBACK } from './drop-commit-context'
 import type {
+  ShouldShowWorkspaceBoardDropIndicator,
   WorktreeDropCommitContext,
   WorktreeStatusDropAtIndexArgs
 } from './drop-commit-context'
@@ -24,6 +25,7 @@ import { flushWorktreePointerDragFrame } from './pointer-flush'
 import { isCustomGroupDrag } from './custom-group-drop'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import { EMPTY_WORKTREE_DRAG_PREVIEW_OFFSETS, type WorktreePointerDrag } from './row-state'
+import { draggedWorktreeCopiesOf, uniqueDraggedIds } from './dragged-worktree-copies'
 
 export function useWorktreePointerDrag(args: {
   ctx: WorktreeDropCommitContext
@@ -37,10 +39,7 @@ export function useWorktreePointerDrag(args: {
   onWorkspaceBoardDragPreviewStart: () => void
   onWorkspaceBoardDragPreviewCommit: () => void
   onDropWorktreesOnWorkspaceBoard: (dropArgs: WorktreeStatusDropAtIndexArgs) => void
-  shouldShowWorkspaceBoardDropIndicator: (
-    worktreeIds: readonly string[],
-    status: WorkspaceStatus
-  ) => boolean
+  shouldShowWorkspaceBoardDropIndicator: ShouldShowWorkspaceBoardDropIndicator
 }) {
   const {
     ctx,
@@ -128,11 +127,11 @@ export function useWorktreePointerDrag(args: {
         draggingWorktreeId: drag.worktreeId,
         sourceGroupKey: drag.sourceGroupKey,
         draggedIds: drag.draggedIds,
+        draggedCopies: drag.draggedCopies,
         reorderDraggedIds: drag.reorderDraggedIds,
         reorderUnitDraggedIds: drag.reorderUnitDraggedIds,
         rects: drag.rects,
-        // Why: reuse the floating preview's own offset so the hit test tracks the
-        // card the user sees, not the raw pointer.
+        // Hit-test the floating card’s visual offset rather than the raw pointer.
         grab: getWorktreeSidebarDragGrab({ offsetY, height }),
         anchor: null
       }
@@ -191,8 +190,14 @@ export function useWorktreePointerDrag(args: {
         selectedWorktreeIds.has(getWorktreeHostIdentity(worktree)) && selectedWorktrees.length > 1
           ? selectedWorktrees
           : [worktree]
-      const draggedIds = draggedWorkspaces.map((workspace) => workspace.id)
-      const reorderDraggedIds = session.getReorderDraggedIds(draggedIds)
+      const draggedCopies = draggedWorktreeCopiesOf(
+        worktree,
+        selectedWorktrees,
+        selectedWorktreeIds.has(getWorktreeHostIdentity(worktree)) && selectedWorktrees.length > 1
+      )
+      const draggedIds = draggedCopies.map((copy) => copy.id)
+      const reorderDraggedCopies = session.getReorderDraggedCopies(draggedCopies)
+      const reorderDraggedIds = uniqueDraggedIds(reorderDraggedCopies)
       const reorderUnitDraggedIds = session.getReorderUnitDraggedIds(
         sourceGroupKey,
         reorderDraggedIds
@@ -206,6 +211,7 @@ export function useWorktreePointerDrag(args: {
         currentY: event.clientY,
         worktreeId,
         draggedIds,
+        draggedCopies: reorderDraggedCopies,
         ...(sourceGroupKey.startsWith(CUSTOM_GROUP_KEY_PREFIX)
           ? { draggedWorkspaces: session.getDraggedWorkspaces(draggedWorkspaces) }
           : {}),

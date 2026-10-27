@@ -15,6 +15,7 @@ import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { runWorktreeBatchDelete } from './delete-worktree-flow'
 import { toWorktreeDeleteIdentities } from './worktree-delete-request'
+import { selectFolderWorkspaces } from '@/store/workspace-record-selectors'
 
 export function customGroupDeletionPlan(
   data: CustomWorkspaceGroups,
@@ -46,7 +47,7 @@ export function requestCustomGroupWorkspaceDeletion(groupId: string): boolean {
   const data = useCustomWorkspaceGroups.getState().data
   const catalog = [
     ...getAllWorktreesFromState(app),
-    ...(app.folderWorkspaces ?? []).map(folderWorkspaceToWorktree)
+    ...(selectFolderWorkspaces(app) ?? []).map(folderWorkspaceToWorktree)
   ]
   const plan = customGroupDeletionPlan(data, groupId, catalog)
   if (plan.blockedReason) {

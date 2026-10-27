@@ -18,6 +18,7 @@ import {
   customGroupDeletionPlan,
   requestCustomGroupWorkspaceDeletion
 } from './custom-group-deletion'
+import { selectFolderWorkspaces } from '@/store/workspace-record-selectors'
 
 export function CustomGroupDeletionChoices({
   groupId,
@@ -33,7 +34,7 @@ export function CustomGroupDeletionChoices({
   const data = useCustomWorkspaceGroups((s) => s.data)
   const deleteGroup = useCustomWorkspaceGroups((s) => s.deleteGroup)
   const worktrees = useAllWorktrees()
-  const folders = useAppStore((s) => s.folderWorkspaces)
+  const folders = useAppStore(selectFolderWorkspaces)
   const [action, setAction] = useState('move')
   const [destination, setDestination] = useState(UNGROUPED_CUSTOM_GROUP_ID)
   const [error, setError] = useState<string | null>(null)

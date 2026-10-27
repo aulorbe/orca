@@ -1,4 +1,6 @@
 import React from 'react'
+import { useWorkspaceReferenceLinkActions } from './use-workspace-reference-link-actions'
+import { LinkActionPopover } from '@/components/link-actions/LinkActionPopover'
 import { getWorkspaceAttachments } from '../../../../shared/workspace-attachments'
 import { WorktreeCardLinkedItemsSection } from './WorktreeCardLinkedItemsSection'
 import { Badge } from '@/components/ui/badge'
@@ -17,7 +19,7 @@ import { DetailHeader, MetadataActionIcon } from './WorktreeCardMetadataControls
 import { hasWorktreeCardDetails, WorktreeCardMetaBadges } from './WorktreeCardMetaBadges'
 import { LinearStateBadge } from './WorktreeCardMetadataStatusBadges'
 import { useWorktreeCardDetailsHoverControl } from './worktree-card-details-hover-state'
-import { getReviewLabel } from './worktree-review-helpers'
+import { WorktreeCardLinkedReviewActions } from './WorktreeCardReviewActions'
 import type {
   WorktreeCardIssueDisplay,
   WorktreeCardJiraIssueDisplay,
@@ -32,8 +34,7 @@ import { WorktreeCardAutomationDetailSection } from './WorktreeCardAutomationDet
 import { WorktreeCardCliDetailSection } from './WorktreeCardCliDetailSection'
 import { WorktreeCardIssueDetailSection } from './WorktreeCardIssueDetailSection'
 import { WorktreeCardHoverIdentityHeader } from './WorktreeCardHoverIdentityHeader'
-import { useOrganizeEditors, WorktreeCardOrganize } from './WorktreeCardOrganize'
-import { GraphiteStackDetails } from './GraphiteStackDetails'
+import { useWorktreeCardForkDetails } from './WorktreeCardOrganize'
 import { CommentMarkdownAsync, preloadCommentMarkdown } from './comment-markdown-lazy'
 
 const COMMENT_MARKDOWN_CLASS_NAME =
@@ -48,8 +49,6 @@ export type {
   WorktreeCardDetailsHoverProps
 }
 
-// Re-exported so existing importers keep their entry point after the badge
-// row moved into its own module.
 export { hasWorktreeCardDetails, WorktreeCardMetaBadges }
 
 function hasComment(comment: string | null): boolean {
@@ -84,13 +83,13 @@ export function WorktreeCardDetailsHover({
   onOpenIssueInBrowser,
   onOpenLinearIssueInOrca,
   onOpenReviewInOrca,
-  onOpenReviewInBrowser,
   onUnlinkReview,
   onOpenAutomation,
   onOpenAutomationRun,
   hoverControl
 }: WorktreeCardDetailsHoverProps): React.JSX.Element {
   const internalHoverControl = useWorktreeCardDetailsHoverControl()
+  const detailsHoverControl = hoverControl ?? internalHoverControl
   const {
     hoverOpen,
     issueMenuOpen,
@@ -99,9 +98,11 @@ export function WorktreeCardDetailsHover({
     handleIssueMenuOpenChange,
     handleReviewMenuOpenChange,
     closeHover
-  } = hoverControl ?? internalHoverControl
+  } = detailsHoverControl
+  const { linkActionPopoverProps, onOpenLink, onAuxClickCapture } =
+    useWorkspaceReferenceLinkActions(workspace?.id, detailsHoverControl)
   const [workspaceTitleEditing, setWorkspaceTitleEditing] = React.useState(false)
-  const organizeEditors = useOrganizeEditors()
+  const forkDetails = useWorktreeCardForkDetails({ worktree, review, detailsAfter })
   const pendingWorkspaceTitleCloseRef = React.useRef(false)
   const handleWorkspaceTitleEditingChange = React.useCallback(
     (editing: boolean): void => {
@@ -134,8 +135,7 @@ export function WorktreeCardDetailsHover({
   )
   const copyLinkedWorkItemLink = React.useCallback(async (url: string, label: string) => {
     try {
-      // Why: Electron clipboard IPC remains reliable from nested hover/dropdown
-      // overlays where browser clipboard activation can be lost.
+      // Electron clipboard IPC survives nested overlays that can lose browser activation.
       await window.api.ui.writeClipboardText(url)
       toast.success(
         translate('auto.components.sidebar.WorktreeCardMeta.copyLinkSuccess', '{{value0}} copied', {
@@ -158,18 +158,6 @@ export function WorktreeCardDetailsHover({
       translate('auto.components.sidebar.WorktreeCardMeta.issueLinkLabel', 'Issue link')
     )
   }, [closeHover, copyLinkedWorkItemLink, issue?.url])
-  const handleCopyReviewLink = React.useCallback((): void => {
-    if (!review?.url) {
-      return
-    }
-    void copyLinkedWorkItemLink(
-      review.url,
-      translate('auto.components.sidebar.WorktreeCardMeta.reviewLinkLabel', '{{value0}} link', {
-        value0: getReviewLabel(review)
-      })
-    )
-  }, [copyLinkedWorkItemLink, review])
-
   const showIdentityHeader = Boolean(branchName || workspaceTitle)
   const attachments = getWorkspaceAttachments(workspace ?? {})
   const showAttachmentCollection =
@@ -189,19 +177,21 @@ export function WorktreeCardDetailsHover({
       automationProvenance,
       cliProvenance
     }) &&
-    !detailsAfter &&
-    !worktree
+    !(detailsAfter || worktree)
   ) {
     return children
   }
 
   return (
     <HoverCard
-      open={hoverOpen || workspaceTitleEditing || organizeEditors.editorOpen}
+      open={hoverOpen || workspaceTitleEditing || forkDetails.editorOpen}
       onOpenChange={handleEffectiveHoverOpenChange}
       openDelay={openDelay}
       closeDelay={closeDelay}
     >
+      <span className="contents" onClick={(event) => event.stopPropagation()}>
+        <LinkActionPopover {...linkActionPopoverProps} />
+      </span>
       <HoverCardTrigger
         asChild
         onPointerEnter={hasComment(comment) ? preloadCommentMarkdown : undefined}
@@ -216,6 +206,7 @@ export function WorktreeCardDetailsHover({
         {...{ [WORKTREE_NATIVE_CONTEXT_MENU_ATTR]: '' }}
         onClick={(event) => event.stopPropagation()}
         onDoubleClick={(event) => event.stopPropagation()}
+        onAuxClickCapture={onAuxClickCapture}
       >
         <SelectedTextCopyMenu className="space-y-3">
           {showIdentityHeader && (
@@ -233,6 +224,7 @@ export function WorktreeCardDetailsHover({
             <>
               <WorktreeCardIssueDetailSection
                 issue={issue}
+                onManageLinks={onManageLinks ? dismissAndRun(onManageLinks) : undefined}
                 issueMenuOpen={issueMenuOpen}
                 onIssueMenuOpenChange={handleIssueMenuOpenChange}
                 onCopyIssueLink={issue?.url ? handleCopyIssueLink : undefined}
@@ -254,6 +246,7 @@ export function WorktreeCardDetailsHover({
                 <WorktreeCardDetailSection>
                   <DetailHeader
                     icon={<LinearIcon className="size-3 text-muted-foreground" />}
+                    onAddReference={onManageLinks ? dismissAndRun(onManageLinks) : undefined}
                     label={translate(
                       'auto.components.sidebar.WorktreeCardMeta.5e982e6128',
                       'Linear {{value0}}',
@@ -314,6 +307,7 @@ export function WorktreeCardDetailsHover({
                 <WorktreeCardDetailSection>
                   <DetailHeader
                     icon={<JiraIcon className="size-3 text-muted-foreground" />}
+                    onAddReference={onManageLinks ? dismissAndRun(onManageLinks) : undefined}
                     label={translate(
                       'auto.components.sidebar.WorktreeCardMeta.jiraIssue',
                       'Jira {{value0}}',
@@ -341,13 +335,11 @@ export function WorktreeCardDetailsHover({
 
               <WorktreeCardReviewDetailSection
                 review={review}
+                onManageLinks={onManageLinks ? dismissAndRun(onManageLinks) : undefined}
                 reviewMenuOpen={reviewMenuOpen}
                 onReviewMenuOpenChange={handleReviewMenuOpenChange}
                 onOpenReviewInOrca={onOpenReviewInOrca}
-                onOpenReviewInBrowser={
-                  onOpenReviewInBrowser && review?.url ? onOpenReviewInBrowser : undefined
-                }
-                onCopyReviewLink={review?.url ? handleCopyReviewLink : undefined}
+                onOpenLink={onOpenLink}
                 onUnlinkReview={onUnlinkReview}
                 closeHover={closeHover}
               />
@@ -362,10 +354,17 @@ export function WorktreeCardDetailsHover({
             jiraIssue={jiraIssue}
             showItems={showAttachmentCollection}
             onManage={onManageLinks ? dismissAndRun(onManageLinks) : undefined}
-            onOpen={(url) => {
-              closeHover()
-              void window.api.shell.openUrl(url)
-            }}
+            onOpen={onOpenLink}
+            renderReviewActions={(item, live) => (
+              <WorktreeCardLinkedReviewActions
+                item={item}
+                review={live}
+                onOpenChange={handleReviewMenuOpenChange}
+                onOpenInOrca={onOpenReviewInOrca}
+                onUnlink={onUnlinkReview}
+                closeHover={closeHover}
+              />
+            )}
           />
 
           {automationProvenance && (
@@ -410,9 +409,7 @@ export function WorktreeCardDetailsHover({
             </WorktreeCardDetailSection>
           )}
 
-          <GraphiteStackDetails review={review} />
-          {detailsAfter}
-          <WorktreeCardOrganize worktree={worktree} editors={organizeEditors} />
+          {forkDetails.content}
         </SelectedTextCopyMenu>
       </HoverCardContent>
     </HoverCard>

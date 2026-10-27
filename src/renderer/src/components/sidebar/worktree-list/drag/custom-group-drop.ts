@@ -16,6 +16,7 @@ import type { WorktreePointerDrag } from './row-state'
 import { getWorkspaceStatus } from '../../workspace-status'
 import { getCustomParentKey } from '../../custom-group-parent-key'
 import { translate } from '@/i18n/i18n'
+import { selectFolderWorkspaces } from '@/store/workspace-record-selectors'
 
 const pendingMoves = new Map<string, symbol>()
 
@@ -118,7 +119,7 @@ export async function commitCustomGroupDrop(
   const snapshots = drag.draggedWorkspaces ?? []
   const current = [
     ...getAllWorktreesFromState(state),
-    ...(state.folderWorkspaces ?? []).map(folderWorkspaceToWorktree)
+    ...(selectFolderWorkspaces(state) ?? []).map(folderWorkspaceToWorktree)
   ]
   const workspaces = resolveCustomDragWorkspaces(snapshots, current)
   if (snapshots.length === 0 || !workspaces) {

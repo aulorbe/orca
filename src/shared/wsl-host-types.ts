@@ -1,4 +1,4 @@
-/** What the desktop UI reads about WSL hosts (WSL-via-orcad C7); desktop-only IPC, never on the wire. */
+/** Desktop-only WSL host IPC; never part of the wire protocol (C7). */
 
 export const WSL_HOST_STATUS_CHANNEL = 'wslHosts:statusChanged'
 
@@ -7,7 +7,6 @@ export type WslHostDistro = {
   state: 'running' | 'stopped'
   /** WSL 1 runs no Linux kernel, so it cannot host orcad; null when the registry did not say. */
   version: 1 | 2 | null
-  /** The WSL host already added for this distro. */
   environmentId: string | null
 }
 
@@ -27,9 +26,25 @@ export type WslHostStatus = {
   state: WslHostConnectionState
   /** Why it failed or is unverifiable, in the main process's words. */
   detail: string | null
+  /** An app update the running server waits to take (e.g. live terminals); Update/Force retry it. */
+  deferredUpdate?: WslHostDeferredUpdate | null
 }
 
-/** What this build can do for WSL hosts; the UI reads it once at startup. */
+/** An explicit Update retries a skipped build behind the terminal census; Force also passes it. */
+export type WslHostConnectIntent = 'update' | 'force'
+
+/** A host a newer Orca runs refused this build: only Force (or updating Orca) changes that. */
+export const ORCAD_HOST_NEWER_DEFERRAL_CODE = 'orcad_host_newer'
+
+export type WslHostDeferredUpdate = {
+  candidateVersion: string
+  /** The update planner's deferral code, as Managed servers reports it. */
+  code: string
+  reason: string
+  /** False when forcing cannot make the update safe (e.g. it would strand terminals). */
+  forceable: boolean
+}
+
 export type WslHostCapability = {
   /** False when the packaged orcad template is missing, so no WSL host can deploy or connect. */
   serverFiles: boolean
@@ -52,7 +67,6 @@ export type WslHostAddResult =
   | { ok: true; environmentId: string }
   | { ok: false; kind: WslHostAddFailureKind; message: string }
 
-/** The host's name in Orca: the distro, marked as WSL so it reads apart from an SSH host. */
 export function wslHostEnvironmentLabel(distro: string): string {
   return `${distro} (WSL)`
 }

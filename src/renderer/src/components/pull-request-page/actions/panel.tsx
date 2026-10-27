@@ -27,6 +27,7 @@ import { resolveGitHubPRMergeMethods } from '../../../../../shared/github/pull-r
 import { resolvePullRequestRepo } from '@/components/github/github-work-item-identity'
 import { translate } from '@/i18n/i18n'
 import { reviewBrowserLinkLabel } from '@/lib/review-browser-link-label'
+import { getPullRequestMergeMethodLabel } from '@/components/github/pull-request-confirmation-copy'
 import type { GitHubWorkItem } from '../../../../../shared/github/work-item-types'
 import type { TaskSourceContext } from '../../../../../shared/task-source-context'
 import type { PullRequestPageProjectOrigin } from '../page-types'
@@ -123,7 +124,7 @@ export function PRActionsPanel({
                   )}
                   {mergePresentation.autoMergeAction?.label ??
                     (mergePresentation.directMergeAvailable
-                      ? mergeMethods.defaultLabel
+                      ? getPullRequestMergeMethodLabel(mergeMethods.defaultMethod)
                       : mergePresentation.label)}
                   <ChevronDown className="size-3 opacity-60" />
                 </Button>
@@ -163,7 +164,7 @@ export function PRActionsPanel({
               </DropdownMenuItem>
             )}
             {mergePresentation.autoMergeAction && <DropdownMenuSeparator />}
-            {mergeMethods.methods.map(({ method, label }) => (
+            {mergeMethods.methods.map((method) => (
               <DropdownMenuItem
                 key={method}
                 disabled={mergeDisabled}
@@ -185,7 +186,7 @@ export function PRActionsPanel({
                 }
               >
                 <GitMerge className="size-4" />
-                {label}
+                {getPullRequestMergeMethodLabel(method)}
               </DropdownMenuItem>
             ))}
             <DropdownMenuItem onSelect={() => window.api.shell.openUrl(item.url)}>

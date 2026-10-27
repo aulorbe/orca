@@ -31,9 +31,7 @@ if [[ "$BUNDLE_ID" == "com.aulorbe.orca.custom" ]]; then
 else
 	unset ORCA_CUSTOM_BUILD
 fi
-# Why: Orca packages the CLI entrypoint outside app.asar so the public shell
-# command can execute it directly with ELECTRON_RUN_AS_NODE, mirroring VS Code's
-# launcher model instead of requiring a separate npm-distributed binary.
+# The unpacked entrypoint runs directly in Electron's Node mode.
 CLI="$CONTENTS/Resources/app.asar.unpacked/out/cli/index.js"
 
 export ORCA_NODE_OPTIONS="${NODE_OPTIONS-}"

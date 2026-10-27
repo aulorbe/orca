@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import { stopRepoHeaderKeyboardToggle } from './worktree-list/rows/header-event-guards'
 
-import type { WorktreeGroupBy } from './worktree-list/grouping/row-types'
+import type { WorktreeGroupBy } from '../../../../shared/sidebar-list/row-types'
 
 export function CustomSubgroupActions({
   label,
