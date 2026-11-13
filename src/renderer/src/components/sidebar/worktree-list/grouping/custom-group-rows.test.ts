@@ -12,6 +12,7 @@ import { folderWorkspaceToWorktree } from '../../../../../../shared/folder-works
 import type { FolderWorkspace } from '../../../../../../shared/folder-workspace-types'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { Worktree } from '../../../../../../shared/worktree/types'
+import type { WorktreeLineage } from '../../../../../../shared/worktree/lineage-types'
 
 const data: CustomWorkspaceGroups = {
   enabled: true,
@@ -207,6 +208,38 @@ describe('custom group rows', () => {
     args[22] = { ...state, parentGroupBy: 'repo' }
     expect(buildRows(...args).filter((row) => row.type === 'folder-workspace')).toMatchObject([
       { sectionKey: customGroupChildKey('infra', 'project-group:project'), groupDepth: 1 }
+    ])
+  })
+
+  it('puts an agent-spawned child in its parent group and nests it there', () => {
+    const lineage: Record<string, WorktreeLineage> = {
+      [other.id]: {
+        worktreeId: other.id,
+        worktreeInstanceId: 'two',
+        parentWorktreeId: card.id,
+        parentWorktreeInstanceId: 'one',
+        origin: 'cli',
+        capture: { source: 'env-workspace', confidence: 'explicit' },
+        createdAt: 1
+      }
+    }
+    const rowsFor = (state: CustomWorkspaceGroups) => {
+      const args = argsFor({ ...state, parentGroupBy: 'none' })
+      args[8] = lineage
+      args[10] = true
+      return buildRows(...args)
+        .filter((row) => row.type === 'item')
+        .map((row) => [row.worktree.id, row.sectionKey, row.depth])
+    }
+    const inherited = assignCustomWorkspaceGroup(data, card, 'frontend')
+    expect(rowsFor(inherited)).toEqual([
+      [card.id, 'custom-group:frontend', 0],
+      [other.id, 'custom-group:frontend', 1]
+    ])
+    // The child's own choice, including Ungrouped, wins over the parent's group.
+    expect(rowsFor(assignCustomWorkspaceGroup(inherited, other, null))).toEqual([
+      [other.id, 'custom-group:ungrouped', 0],
+      [card.id, 'custom-group:frontend', 0]
     ])
   })
 })

@@ -75,6 +75,50 @@ describe('custom workspace groups', () => {
   })
 })
 
+describe('custom group inheritance', () => {
+  type Card = typeof card
+  const parent: Card = { ...card, id: 'repo::/parent', instanceId: 'parent' }
+  const child: Card = { ...card, id: 'repo::/child', instanceId: 'child' }
+  const grandchild: Card = { ...card, id: 'repo::/grandchild', instanceId: 'grandchild' }
+  const parents = new Map<string, Card>([
+    [child.id, parent],
+    [grandchild.id, child]
+  ])
+  const getParent = (workspace: Card) => parents.get(workspace.id)
+
+  it('inherits the nearest ancestor group and follows it when the parent moves', () => {
+    const state = assignCustomWorkspaceGroup(groups(), parent, frontend.id)
+    expect(getCustomWorkspaceGroupId(state, grandchild, getParent)).toBe(frontend.id)
+    expect(getCustomWorkspaceGroupId(state, grandchild)).toBeNull()
+    const moved = assignCustomWorkspaceGroup(state, parent, infrastructure.id)
+    expect(getCustomWorkspaceGroupId(moved, child, getParent)).toBe(infrastructure.id)
+    expect(getCustomWorkspaceGroupKey(moved, child, undefined, getParent)).toBe(
+      'custom-group:infrastructure'
+    )
+  })
+
+  it('lets a child keep its own group or an explicit Ungrouped', () => {
+    const state = assignCustomWorkspaceGroup(groups(), parent, frontend.id)
+    const own = assignCustomWorkspaceGroup(state, child, infrastructure.id)
+    expect(getCustomWorkspaceGroupId(own, grandchild, getParent)).toBe(infrastructure.id)
+    const ungrouped = assignCustomWorkspaceGroup(state, child, null)
+    expect(getCustomWorkspaceGroupId(ungrouped, child, getParent)).toBeNull()
+    expect(normalizeCustomWorkspaceGroups(ungrouped).assignments).toEqual(ungrouped.assignments)
+  })
+
+  it('re-inherits after its own group is deleted and survives lineage cycles', () => {
+    const state = assignCustomWorkspaceGroup(
+      assignCustomWorkspaceGroup(groups(), parent, frontend.id),
+      child,
+      infrastructure.id
+    )
+    const deleted = deleteCustomWorkspaceGroup(state, infrastructure.id)
+    expect(getCustomWorkspaceGroupId(deleted, child, getParent)).toBe(frontend.id)
+    const cyclic = (workspace: Card) => (workspace.id === child.id ? grandchild : child)
+    expect(getCustomWorkspaceGroupId(groups(), child, cyclic)).toBeNull()
+  })
+})
+
 describe('placeCustomWorkspaceGroup', () => {
   const state: CustomWorkspaceGroups = {
     enabled: true,

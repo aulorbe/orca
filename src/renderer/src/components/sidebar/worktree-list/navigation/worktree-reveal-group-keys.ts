@@ -17,6 +17,7 @@ import { getWorktreeLineageGroupKey, PINNED_GROUP_KEY } from '../grouping/group-
 import type { ProjectGroupingModel } from '../grouping/project-grouping'
 import type { PinnedWorktreeDisplayPolicy, WorktreeGroupBy } from '../grouping/row-types'
 import { getGroupKeysForWorktree } from '../grouping/worktree-group-keys'
+import { createCustomGroupParentResolver } from '../../custom-group-lineage-parent'
 
 export function getWorktreeRevealCollapsedGroupKeys(args: {
   worktree: Worktree
@@ -75,7 +76,8 @@ export function getWorktreeRevealCollapsedGroupKeys(args: {
         args.workspaceStatuses,
         args.settings,
         args.projectGroups,
-        args.projectGrouping
+        args.projectGrouping,
+        createCustomGroupParentResolver(hostLineage.lineageById, hostLineage.worktreeMap)
       ).map(sectionKey)
     )
   }

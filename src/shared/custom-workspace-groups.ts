@@ -58,20 +58,57 @@ export function normalizeCustomWorkspaceGroups(value: unknown): CustomWorkspaceG
       : {}),
     groups,
     assignments: Object.fromEntries(
-      Object.entries(parsed.data.assignments).filter(([, id]) => ids.has(id))
+      Object.entries(parsed.data.assignments).filter(
+        ([, id]) => id === UNGROUPED_CUSTOM_GROUP_ID || ids.has(id)
+      )
     )
   }
 }
 
-export function getCustomWorkspaceGroupId(
+/**
+ * The card's own choice: a group id, the explicit Ungrouped sentinel, or undefined when the
+ * card never chose (so it may inherit). Stale ids for deleted groups count as never chosen.
+ */
+function getOwnCustomWorkspaceGroupChoice(
   state: CustomWorkspaceGroups,
   workspace: WorkspaceCardIdentity
-): string | null {
+): string | undefined {
   for (const key of getWorkspaceCardKeys(workspace)) {
     const id = state.assignments[key]
-    if (id && state.groups.some((group) => group.id === id)) {
+    if (id && (id === UNGROUPED_CUSTOM_GROUP_ID || state.groups.some((group) => group.id === id))) {
       return id
     }
+  }
+  return undefined
+}
+
+/**
+ * Resolves a card's lineage parent (e.g. the workspace whose agent spawned it). Returning
+ * nothing ends the walk.
+ */
+export type CustomGroupParentResolver<T extends WorkspaceCardIdentity> = (
+  workspace: T
+) => T | null | undefined
+
+/**
+ * Why inherit: child workspaces spawned by an agent (orca worktree create) should land in the
+ * parent's group without a manual move, and keep following it when the parent is regrouped.
+ * A child's own explicit choice (including Ungrouped) always wins over the inherited one.
+ */
+export function getCustomWorkspaceGroupId<T extends WorkspaceCardIdentity>(
+  state: CustomWorkspaceGroups,
+  workspace: T,
+  getParent?: CustomGroupParentResolver<T>
+): string | null {
+  const seen = new Set<string>()
+  let current: T | null | undefined = workspace
+  while (current && !seen.has(getWorkspaceCardKey(current))) {
+    seen.add(getWorkspaceCardKey(current))
+    const own = getOwnCustomWorkspaceGroupChoice(state, current)
+    if (own !== undefined) {
+      return own === UNGROUPED_CUSTOM_GROUP_ID ? null : own
+    }
+    current = getParent?.(current)
   }
   return null
 }
@@ -137,25 +174,31 @@ export function isNamedCustomGroupSectionKey(key: string | undefined): boolean {
   return Boolean(key && parseCustomGroupSectionKey(key)?.groupId)
 }
 
-export function getCustomWorkspaceGroupKey(
+export function getCustomWorkspaceGroupKey<
+  T extends WorkspaceCardIdentity & Pick<Worktree, 'workspaceStatus'>
+>(
   state: CustomWorkspaceGroups,
-  workspace: WorkspaceCardIdentity & Pick<Worktree, 'workspaceStatus'>,
-  statuses: readonly WorkspaceStatusDefinition[] = cloneDefaultWorkspaceStatuses()
+  workspace: T,
+  statuses: readonly WorkspaceStatusDefinition[] = cloneDefaultWorkspaceStatuses(),
+  getParent?: CustomGroupParentResolver<T>
 ): string {
   return customGroupSectionKey(
-    getCustomWorkspaceGroupId(state, workspace),
+    getCustomWorkspaceGroupId(state, workspace, getParent),
     getCustomParentGroupBy(state) === 'workspace-status'
       ? getWorkspaceStatus(workspace, statuses)
       : null
   )
 }
 
-export function getCustomWorkspaceGroupKeys(
+export function getCustomWorkspaceGroupKeys<
+  T extends WorkspaceCardIdentity & Pick<Worktree, 'workspaceStatus'>
+>(
   state: CustomWorkspaceGroups,
-  workspace: WorkspaceCardIdentity & Pick<Worktree, 'workspaceStatus'>,
-  statuses: readonly WorkspaceStatusDefinition[] = cloneDefaultWorkspaceStatuses()
+  workspace: T,
+  statuses: readonly WorkspaceStatusDefinition[] = cloneDefaultWorkspaceStatuses(),
+  getParent?: CustomGroupParentResolver<T>
 ): string[] {
-  const key = getCustomWorkspaceGroupKey(state, workspace, statuses)
+  const key = getCustomWorkspaceGroupKey(state, workspace, statuses, getParent)
   return getCustomParentGroupBy(state) === 'workspace-status'
     ? [getWorkspaceStatusGroupKey(getWorkspaceStatus(workspace, statuses)), key]
     : [key]
@@ -205,9 +248,9 @@ export function assignCustomWorkspacesGroup(
     for (const key of getWorkspaceCardKeys(workspace)) {
       delete assignments[key]
     }
-    if (groupId !== null) {
-      assignments[getWorkspaceCardKey(workspace)] = groupId
-    }
+    // Why store Ungrouped: otherwise a child card moved out of its parent's group would
+    // immediately re-inherit that group.
+    assignments[getWorkspaceCardKey(workspace)] = groupId ?? UNGROUPED_CUSTOM_GROUP_ID
   }
   return { ...state, assignments }
 }

@@ -3,6 +3,7 @@ import { getAllWorktreesFromState } from '@/store/selectors'
 import { useCustomWorkspaceGroups } from '@/store/custom-workspace-groups'
 import {
   getCustomWorkspaceGroupId,
+  type CustomGroupParentResolver,
   type CustomWorkspaceGroups
 } from '../../../../shared/custom-workspace-groups'
 import { getWorkspaceCardKeys } from '../../../../shared/workspace-card-identity'
@@ -15,18 +16,21 @@ import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { runWorktreeBatchDelete } from './delete-worktree-flow'
 import { toWorktreeDeleteIdentities } from './worktree-delete-request'
+import { createCustomGroupParentResolver } from './custom-group-lineage-parent'
 
 export function customGroupDeletionPlan(
   data: CustomWorkspaceGroups,
   groupId: string,
-  catalog: readonly Worktree[]
+  catalog: readonly Worktree[],
+  // Why: inherited child cards render inside the group, so they are part of what it deletes.
+  getParent?: CustomGroupParentResolver<Worktree>
 ) {
   const known = new Set(catalog.flatMap(getWorkspaceCardKeys))
   const unavailable = Object.entries(data.assignments).some(
     ([key, id]) => id === groupId && !known.has(key)
   )
   const members = catalog.filter(
-    (workspace) => getCustomWorkspaceGroupId(data, workspace) === groupId
+    (workspace) => getCustomWorkspaceGroupId(data, workspace, getParent) === groupId
   )
   const protectedMembers = members.some(
     (workspace) => workspace.isMainWorktree || parseWorkspaceKey(workspace.id)?.type === 'folder'
@@ -48,7 +52,12 @@ export function requestCustomGroupWorkspaceDeletion(groupId: string): boolean {
     ...getAllWorktreesFromState(app),
     ...(app.folderWorkspaces ?? []).map(folderWorkspaceToWorktree)
   ]
-  const plan = customGroupDeletionPlan(data, groupId, catalog)
+  const plan = customGroupDeletionPlan(
+    data,
+    groupId,
+    catalog,
+    createCustomGroupParentResolver(app.worktreeLineageById, getAllWorktreesFromState(app))
+  )
   if (plan.blockedReason) {
     throw new Error(plan.blockedReason)
   }

@@ -1,5 +1,5 @@
 import type { AppState } from '@/store/types'
-import { getRepoMapFromState } from '@/store/selectors'
+import { getAllWorktreesFromState, getRepoMapFromState } from '@/store/selectors'
 import { getProjectHostSetupProjectionFromState } from '@/store/project-host-setup-selector'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
@@ -12,6 +12,7 @@ import {
 } from './worktree-list/grouping/worktree-group-keys'
 import type { WorktreeGroupBy } from './worktree-list/grouping/row-types'
 import { getFolderWorkspaceRevealGroupKeys } from './worktree-list/navigation/folder-reveal'
+import { createCustomGroupParentResolver } from './custom-group-lineage-parent'
 
 export function getCustomWorkspaceRevealKeys(state: AppState, workspace: Worktree): string[] {
   if (parseWorkspaceKey(workspace.id)?.type === 'folder') {
@@ -31,7 +32,8 @@ export function getCustomWorkspaceRevealKeys(state: AppState, workspace: Worktre
     state.workspaceStatuses,
     state.settings,
     state.projectGroups,
-    { projects: projection.projects, projectHostSetups: projection.setups }
+    { projects: projection.projects, projectHostSetups: projection.setups },
+    createCustomGroupParentResolver(state.worktreeLineageById, getAllWorktreesFromState(state))
   )
 }
 

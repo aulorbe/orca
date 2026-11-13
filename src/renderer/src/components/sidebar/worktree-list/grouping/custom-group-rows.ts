@@ -9,6 +9,7 @@ import type { Worktree } from '../../../../../../shared/worktree/types'
 import type { SectionAppendContext } from './group-sections'
 import type { Row } from './row-types'
 import { PROJECT_GROUP_META } from './group-keys'
+import { createCustomGroupParentResolver } from '../../custom-group-lineage-parent'
 import { getLaneHostWorktreeCounts, getLaneHostWorktreeIds } from './host-labels'
 import { appendWorktreeRows, buildFolderWorkspaceRow } from './row-builders'
 import {
@@ -44,8 +45,9 @@ export function appendCustomGroupRows(
   )
   const ungrouped: Bucket = { name: 'Ungrouped', items: [], folders: [] }
   buckets.set(UNGROUPED_CUSTOM_GROUP_ID, ungrouped)
+  const getParent = createCustomGroupParentResolver(ctx.lineageById, ctx.worktreeMap)
   for (const worktree of worktrees) {
-    const id = getCustomWorkspaceGroupId(data, worktree)
+    const id = getCustomWorkspaceGroupId(data, worktree, getParent)
     const bucket = id ? (buckets.get(id) ?? ungrouped) : ungrouped
     bucket.items.push(worktree)
   }

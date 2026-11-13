@@ -18,6 +18,7 @@ import {
   customGroupDeletionPlan,
   requestCustomGroupWorkspaceDeletion
 } from './custom-group-deletion'
+import { createCustomGroupParentResolver } from './custom-group-lineage-parent'
 
 export function CustomGroupDeletionChoices({
   groupId,
@@ -39,10 +40,13 @@ export function CustomGroupDeletionChoices({
   const [error, setError] = useState<string | null>(null)
   const actionId = useId()
   const destinationId = useId()
-  const plan = customGroupDeletionPlan(data, groupId, [
-    ...worktrees,
-    ...folders.map(folderWorkspaceToWorktree)
-  ])
+  const lineageById = useAppStore((s) => s.worktreeLineageById)
+  const plan = customGroupDeletionPlan(
+    data,
+    groupId,
+    [...worktrees, ...folders.map(folderWorkspaceToWorktree)],
+    createCustomGroupParentResolver(lineageById, worktrees)
+  )
   return (
     <>
       <div className="space-y-2">
