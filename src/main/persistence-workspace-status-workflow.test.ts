@@ -69,7 +69,7 @@ describe('Store', () => {
     await closeTestStores()
     rmSync(testState.dir, { recursive: true, force: true })
   })
-  it('adds Blocked to existing profiles once and respects removal on restart', async () => {
+  it('adds Blocked and Paused to existing profiles once and respects removal on restart', async () => {
     writeDataFile({
       schemaVersion: 1,
       repos: [],
@@ -90,11 +90,15 @@ describe('Store', () => {
       'in-progress',
       'in-review',
       'blocked',
+      'paused',
       'completed'
     ])
     expect(store.getUI()._workspaceBlockedStatusAdded).toBe(true)
+    expect(store.getUI()._workspacePausedStatusAdded).toBe(true)
     store.flush()
-    expect(readDataFile()).toMatchObject({ ui: { _workspaceBlockedStatusAdded: true } })
+    expect(readDataFile()).toMatchObject({
+      ui: { _workspaceBlockedStatusAdded: true, _workspacePausedStatusAdded: true }
+    })
     store.updateUI({ workspaceStatuses: LEGACY_DEFAULT_WORKSPACE_STATUSES })
     store.flush()
     const restarted = await createStore()
@@ -199,7 +203,8 @@ describe('Store', () => {
     const store = await createStore()
     expect(store.getUI().workspaceStatuses?.map((status) => status.id)).toEqual([
       ...imported.map((status) => status.id),
-      'blocked'
+      'blocked',
+      'paused'
     ])
 
     const authored = Array.from({ length: 64 }, (_, index) => ({
@@ -240,6 +245,7 @@ describe('Store', () => {
       'in-progress',
       'in-review',
       'blocked',
+      'paused',
       'completed'
     ])
     expect(ui.workspaceStatuses?.at(-1)?.label).toBe('Done')
@@ -257,6 +263,7 @@ describe('Store', () => {
       'in-progress',
       'in-review',
       'blocked',
+      'paused',
       'completed'
     ])
     expect(persisted.ui.workspaceStatuses?.at(-1)?.label).toBe('Done')
@@ -284,6 +291,7 @@ describe('Store', () => {
       'in-progress',
       'in-review',
       'blocked',
+      'paused',
       'completed'
     ])
     expect(store.getUI().workspaceStatuses?.at(-1)?.label).toBe('Done')
@@ -364,6 +372,7 @@ describe('Store', () => {
       'completed',
       'in-review',
       'blocked',
+      'paused',
       'in-progress',
       'todo'
     ])

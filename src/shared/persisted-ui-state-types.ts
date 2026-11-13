@@ -117,6 +117,8 @@ export type PersistedUIState = {
   _workspaceStatusesDefaultVisualsMigrated?: boolean
   /** One-shot addition of the built-in Blocked status, without replacing authored workflows. */
   _workspaceBlockedStatusAdded?: boolean
+  /** One-shot addition of the built-in Paused status, without replacing authored workflows. */
+  _workspacePausedStatusAdded?: boolean
   /** One-shot migration flag for adding the default-on Ports status item. */
   _portsStatusBarDefaultAdded?: boolean
   /** One-shot migration flag for adding the default-on Kimi status item. */

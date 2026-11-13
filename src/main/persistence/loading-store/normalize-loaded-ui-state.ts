@@ -9,6 +9,7 @@ import { isExistingPersistedProfile } from '../../../shared/project-order-manual
 import { resolveUsagePercentageDisplayChangeNoticeDismissed } from '../../../shared/usage-percentage-display-change-notice'
 import { normalizePersistedWorkspaceStatuses } from '../../../shared/workspace-statuses'
 import { addDefaultBlockedWorkspaceStatus } from '../../../shared/workspace-status-blocked-migration'
+import { addDefaultPausedWorkspaceStatus } from '../../../shared/workspace-status-paused-migration'
 import {
   normalizeRightSidebarExplorerView,
   normalizeRightSidebarTab,
@@ -64,16 +65,21 @@ export function normalizeLoadedUiState(
   const workspaceStatusesDefaultVisualsMigrated =
     parsed.ui?._workspaceStatusesDefaultVisualsMigrated === true
   const workspaceBlockedStatusAdded = parsed.ui?._workspaceBlockedStatusAdded === true
+  const workspacePausedStatusAdded = parsed.ui?._workspacePausedStatusAdded === true
   const normalizedStatuses = normalizePersistedWorkspaceStatuses(parsed.ui?.workspaceStatuses, {
     migrateDefaultWorkflowStatuses: !workspaceStatusesDefaultWorkflowMigrated,
     repairReorderedDefaultStatuses: !workspaceStatusesReorderedDefaultRepaired,
     migrateLegacyDefaultStatusVisuals: !workspaceStatusesDefaultVisualsMigrated
   })
-  const workspaceStatuses = workspaceBlockedStatusAdded
+  const withBlocked = workspaceBlockedStatusAdded
     ? normalizedStatuses
     : addDefaultBlockedWorkspaceStatus(normalizedStatuses)
+  const workspaceStatuses = workspacePausedStatusAdded
+    ? withBlocked
+    : addDefaultPausedWorkspaceStatus(withBlocked)
   if (
     !workspaceBlockedStatusAdded ||
+    !workspacePausedStatusAdded ||
     !workspaceStatusesDefaultOrderMigrated ||
     !workspaceStatusesReorderedDefaultRepaired ||
     !workspaceStatusesDefaultWorkflowMigrated ||
@@ -237,6 +243,7 @@ export function normalizeLoadedUiState(
     _workspaceStatusesDefaultWorkflowMigrated: true,
     _workspaceStatusesDefaultVisualsMigrated: true,
     _workspaceBlockedStatusAdded: true,
+    _workspacePausedStatusAdded: true,
     _sortBySmartMigrated: true,
     ...(migratedCardProps !== undefined ? { worktreeCardProperties: migratedCardProps } : {}),
     // Why: keep stamping the legacy flag for rollback forward-compat; the new flag actually gates the migration.

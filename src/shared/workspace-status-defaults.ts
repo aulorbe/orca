@@ -7,11 +7,19 @@ export const BLOCKED_WORKSPACE_STATUS = {
   icon: 'ban'
 } as const satisfies WorkspaceStatusDefinition
 
+export const PAUSED_WORKSPACE_STATUS = {
+  id: 'paused',
+  label: 'Paused',
+  color: 'amber',
+  icon: 'circle-pause'
+} as const satisfies WorkspaceStatusDefinition
+
 export const DEFAULT_STATUS_VISUALS: Record<string, { color: string; icon: string }> = {
   todo: { color: 'neutral', icon: 'circle' },
   'in-progress': { color: 'conductor-progress', icon: 'conductor-progress' },
   'in-review': { color: 'conductor-review', icon: 'conductor-review' },
   blocked: { color: BLOCKED_WORKSPACE_STATUS.color, icon: BLOCKED_WORKSPACE_STATUS.icon },
+  paused: { color: PAUSED_WORKSPACE_STATUS.color, icon: PAUSED_WORKSPACE_STATUS.icon },
   completed: { color: 'conductor-done', icon: 'conductor-done' }
 }
 
@@ -25,5 +33,6 @@ export const DEFAULT_WORKSPACE_STATUSES = [
   },
   { id: 'in-review', label: 'In review', color: 'conductor-review', icon: 'conductor-review' },
   BLOCKED_WORKSPACE_STATUS,
+  PAUSED_WORKSPACE_STATUS,
   { id: 'completed', label: 'Done', color: 'conductor-done', icon: 'conductor-done' }
 ] as const satisfies readonly WorkspaceStatusDefinition[]

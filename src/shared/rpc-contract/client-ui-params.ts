@@ -184,6 +184,7 @@ export const UiUpdateFields = z
     _workspaceStatusesDefaultWorkflowMigrated: z.boolean().optional(),
     _workspaceStatusesDefaultVisualsMigrated: z.boolean().optional(),
     _workspaceBlockedStatusAdded: z.boolean().optional(),
+    _workspacePausedStatusAdded: z.boolean().optional(),
     statusBarItems: z.array(StatusBarItem).optional(),
     _portsStatusBarDefaultAdded: z.boolean().optional(),
     _kimiStatusBarDefaultAdded: z.boolean().optional(),
