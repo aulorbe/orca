@@ -176,4 +176,48 @@ describe('WorktreeCard pinned repo icon', () => {
     },
     WORKTREE_CARD_IMPORT_TIMEOUT_MS
   )
+
+  it(
+    'names the repo at the start of the branch row in new card style',
+    async () => {
+      settings = { compactWorktreeCards: false, experimentalNewWorktreeCardStyle: true }
+      worktreeCardProperties = ['status', 'branch']
+      const { default: WorktreeCard } = await import('./WorktreeCard')
+
+      const markup = renderToStaticMarkup(
+        <WorktreeCard
+          worktree={makeWorktree({ isPinned: false })}
+          repo={makeRepo()}
+          isActive={false}
+        />
+      )
+
+      // Why: plain text in the identity row, not the legacy pill badge.
+      expect(markup).toMatch(/data-worktree-card-repo-name="">orca</)
+      expect(markup).toContain('feature/pinned')
+      expect(markup).not.toContain('lowercase">orca')
+    },
+    WORKTREE_CARD_IMPORT_TIMEOUT_MS
+  )
+
+  it(
+    'omits the repo name in new card style when grouped by repo',
+    async () => {
+      settings = { compactWorktreeCards: false, experimentalNewWorktreeCardStyle: true }
+      worktreeCardProperties = ['status', 'branch']
+      const { default: WorktreeCard } = await import('./WorktreeCard')
+
+      const markup = renderToStaticMarkup(
+        <WorktreeCard
+          worktree={makeWorktree({ isPinned: false })}
+          repo={makeRepo()}
+          isActive={false}
+          hideRepoBadge
+        />
+      )
+
+      expect(markup).not.toContain('data-worktree-card-repo-name')
+    },
+    WORKTREE_CARD_IMPORT_TIMEOUT_MS
+  )
 })

@@ -84,6 +84,13 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
     showRepoIdentityInTitle && !!repo && !hideRepoBadge && !isFolder && !showPinnedRepoIcon
   const showRepoBadgeInMetaRow =
     !showRepoIdentityInTitle && !!repo && !hideRepoBadge && !showPinnedRepoIcon
+  // Why: repo icons often look alike, so new-style cards also name the repo/project at the start
+  // of the branch identity row. Title-only cards stay one line, so no row is added for it.
+  const showRepoNameInNewCard =
+    newCardStyle &&
+    !compactCards &&
+    showIdentityInNewCard &&
+    (showInlineRepoBadge || (showPinnedRepoIcon && !isFolder))
   const showHostContextBadge = !compactCards && !!hostContextLabel && cardProps.includes('host')
   const showDetachedHeadInMetaRow = !compactCards && !isFolder && detachedHeadDisplay !== null
   const showBranch =
@@ -296,6 +303,7 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
     showPinnedRepoIcon,
     showInlineRepoBadge,
     showRepoBadgeInMetaRow,
+    showRepoNameInNewCard,
     showHostContextBadge,
     showIdentityInNewCard,
     showDetachedHeadInMetaRow,
